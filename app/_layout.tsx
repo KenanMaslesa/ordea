@@ -8,6 +8,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { StatusBar } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
@@ -57,6 +58,7 @@ function RootLayoutNav() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar backgroundColor="#0E7C86" barStyle="light-content" />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />

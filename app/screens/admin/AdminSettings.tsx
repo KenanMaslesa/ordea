@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   SafeAreaView,
@@ -21,6 +22,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { MENU } from "../../../assets/data";
 import { incrementMenuVersion } from "../../services/place.service";
 import { MenuNode, Sector } from "../../types/order.types";
 
@@ -77,6 +79,8 @@ export default function AdminSettings({ placeId }: Props) {
   const [localPrices, setLocalPrices] = useState<Record<string, string>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<MenuNode | null>(null);
   const [sectorPickerOpen, setSectorPickerOpen] = useState<string | null>(null);
+  const [showSampleModal, setShowSampleModal] = useState(false);
+  const [loadingSample, setLoadingSample] = useState(false);
 
   useEffect(() => {
     if (!placeId) return;
@@ -177,6 +181,56 @@ export default function AdminSettings({ placeId }: Props) {
     await updateDoc(doc(db, menuPath(placeId), nodeId), { sectorId });
     await incrementMenuVersion(placeId);
     setSectorPickerOpen(null);
+  };
+
+  const loadSampleMenu = async () => {
+    if (!placeId) return;
+    setLoadingSample(true);
+    try {
+      for (let catIdx = 0; catIdx < MENU.length; catIdx++) {
+        const cat = MENU[catIdx];
+        const catRef = await addDoc(collection(db, menuPath(placeId)), {
+          type: "category",
+          name: cat.name,
+          emoji: cat.emoji ?? null,
+          price: null,
+          sectorId: null,
+          parentId: null,
+          order: catIdx,
+          createdAt: Date.now(),
+        });
+        for (let subIdx = 0; subIdx < cat.subcategories.length; subIdx++) {
+          const sub = cat.subcategories[subIdx];
+          const subRef = await addDoc(collection(db, menuPath(placeId)), {
+            type: "category",
+            name: sub.name,
+            emoji: (sub as any).emoji ?? null,
+            price: null,
+            sectorId: null,
+            parentId: catRef.id,
+            order: subIdx,
+            createdAt: Date.now(),
+          });
+          for (let itemIdx = 0; itemIdx < sub.items.length; itemIdx++) {
+            const item = sub.items[itemIdx];
+            await addDoc(collection(db, menuPath(placeId)), {
+              type: "item",
+              name: item.name,
+              emoji: null,
+              price: item.price,
+              sectorId: sectors[0]?.id ?? null,
+              parentId: subRef.id,
+              order: itemIdx,
+              createdAt: Date.now(),
+            });
+          }
+        }
+      }
+      await incrementMenuVersion(placeId);
+    } finally {
+      setLoadingSample(false);
+      setShowSampleModal(false);
+    }
   };
 
   const moveNode = async (node: MenuNode, direction: "up" | "down") => {
@@ -327,6 +381,14 @@ export default function AdminSettings({ placeId }: Props) {
                   <Text style={styles.newRootBtnText}>Nova kategorija</Text>
                 </View>
               </Pressable>
+              {nodes.length === 0 && (
+                <Pressable onPress={() => setShowSampleModal(true)} style={styles.sampleBtn}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Ionicons name="sparkles-outline" size={18} color="#0E7C86" />
+                    <Text style={styles.sampleBtnText}>Učitaj primjer menija</Text>
+                  </View>
+                </Pressable>
+              )}
             </>
           )}
         </ScrollView>
@@ -441,6 +503,36 @@ export default function AdminSettings({ placeId }: Props) {
           </Pressable>
         </Pressable>
       </Modal>
+      {/* Sample menu confirmation modal */}
+      <Modal visible={showSampleModal} transparent animationType="fade" onRequestClose={() => setShowSampleModal(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => !loadingSample && setShowSampleModal(false)}>
+          <Pressable style={styles.modalBox} onPress={e => e.stopPropagation()}>
+            <View style={{ alignItems: "center", marginBottom: 12 }}>
+              <Ionicons name="sparkles" size={36} color="#0E7C86" />
+            </View>
+            <Text style={styles.modalTitle}>Primjer menija</Text>
+            <Text style={{ fontSize: 14, color: "#555", marginBottom: 20, lineHeight: 20 }}>
+              Ovo će dodati kompletan primjer menija (kafić/bar) sa kategorijama, potkategorijama i artiklima.
+              {"\n\n"}Artiklima će biti dodijeljen prvi dostupni sektor.
+            </Text>
+            {loadingSample ? (
+              <View style={{ alignItems: "center", paddingVertical: 12 }}>
+                <ActivityIndicator size="large" color="#0E7C86" />
+                <Text style={{ marginTop: 10, color: "#888", fontSize: 13 }}>Dodavanje artikala...</Text>
+              </View>
+            ) : (
+              <View style={styles.modalActions}>
+                <Pressable onPress={() => setShowSampleModal(false)} style={styles.cancelBtn}>
+                  <Text style={styles.cancelBtnText}>Otkaži</Text>
+                </Pressable>
+                <Pressable onPress={loadSampleMenu} style={styles.saveBtn}>
+                  <Text style={styles.saveBtnText}>Učitaj</Text>
+                </Pressable>
+              </View>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
       {/* Delete confirmation modal */}
       <Modal visible={!!deleteConfirm} transparent animationType="fade" onRequestClose={() => setDeleteConfirm(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setDeleteConfirm(null)}>
@@ -539,6 +631,11 @@ const styles = StyleSheet.create({
     borderRadius: 10, alignItems: "center",
   },
   newRootBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  sampleBtn: {
+    marginTop: 12, borderWidth: 1.5, borderColor: "#0E7C86", borderStyle: "dashed",
+    padding: 14, borderRadius: 10, alignItems: "center", backgroundColor: "#f0fafb",
+  },
+  sampleBtnText: { color: "#0E7C86", fontWeight: "700", fontSize: 14 },
   modalOverlay: {
     flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", padding: 20,
   },

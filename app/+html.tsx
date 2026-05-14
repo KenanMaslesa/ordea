@@ -33,7 +33,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {/* PWA / mobile-web enhancements */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
         {/* Add any additional <head> elements that you want globally available on web... */}
       </head>
@@ -44,11 +44,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
 const responsiveBackground = `
 body {
-  background-color: #fff;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
+  background-color: #0E7C86;
 }
 `;
