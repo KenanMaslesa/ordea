@@ -1,0 +1,3 @@
+npx expo start
+npx expo export (nvm use 20)
+firebase deploy --only hosting
