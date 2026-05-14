@@ -3,21 +3,74 @@ import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { db, placesRoot } from "../firebase";
-import { getItem } from "./helper";
+import { getItem, setItem } from "./helper";
 import useAuth from "./hooks/useAuth";
 import { listenOrders, markSectorDone } from "./services/orders.service";
 import { Order, Sector } from "./types/order.types";
+
+/* ---------------- THEME ---------------- */
+type Theme = "dark" | "light";
+
+const DARK = {
+  bg: "#0D0D0F",
+  surface: "#18181B",
+  surfaceHigh: "#27272A",
+  border: "#3F3F46",
+  accent: "#22C55E",
+  accentDim: "#16A34A",
+  danger: "#EF4444",
+  dangerDim: "#B91C1C",
+  warn: "#F59E0B",
+  text: "#FAFAFA",
+  textSub: "#A1A1AA",
+  textMuted: "#71717A",
+  white: "#FFFFFF",
+  itemNoteBg: "#2D2000",
+  itemNoteBorder: "#78350F",
+  orderNoteBg: "#0C1F3A",
+  orderNoteBorder: "#1E3A5F",
+  orderNoteText: "#93C5FD",
+  modalIconBg: "#052E16",
+  modalIconBorder: "#166534",
+  cardAlertBg: "#1C0A0A",
+};
+
+const LIGHT = {
+  bg: "#F4F4F5",
+  surface: "#FFFFFF",
+  surfaceHigh: "#F1F5F9",
+  border: "#E4E4E7",
+  accent: "#16A34A",
+  accentDim: "#15803D",
+  danger: "#DC2626",
+  dangerDim: "#B91C1C",
+  warn: "#D97706",
+  text: "#09090B",
+  textSub: "#52525B",
+  textMuted: "#A1A1AA",
+  white: "#FFFFFF",
+  itemNoteBg: "#FFFBEB",
+  itemNoteBorder: "#FCD34D",
+  orderNoteBg: "#EFF6FF",
+  orderNoteBorder: "#BFDBFE",
+  orderNoteText: "#1D4ED8",
+  modalIconBg: "#DCFCE7",
+  modalIconBorder: "#86EFAC",
+  cardAlertBg: "#FEF2F2",
+};
 
 /* ---------------- TIME ---------------- */
 
@@ -32,12 +85,19 @@ const formatTime = (seconds: number) => {
   return r.trim();
 };
 
+const urgencyColor = (seconds: number, C: typeof DARK) => {
+  if (seconds > 900) return C.danger;  // >15 min — crvena
+  if (seconds > 420) return C.warn;    // >7 min — žuta
+  return C.accent;                     // ok — zelena
+};
+
 /* ================= SCREEN ================= */
 
 export default function Bartender() {
   useAuth("bartender");
 
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [timeNow, setTimeNow] = useState(Date.now());
@@ -50,16 +110,25 @@ export default function Bartender() {
   const [collapsedOther, setCollapsedOther] = useState<Record<string, boolean>>({});
 
   const soundRef = useRef<Audio.Sound | null>(null);
-  const blinkAnim = useRef(new Animated.Value(0)).current;
+  const [theme, setTheme] = useState<Theme>("dark");
+
+  const C = useMemo(() => theme === "dark" ? DARK : LIGHT, [theme]);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    setItem("@theme", next);
+  };
 
   /* ---------- LOAD STORAGE ---------- */
 
   useEffect(() => {
-    Promise.all([getItem("@placeId"), getItem("@sectorIds"), getItem("@role")]).then(
-      ([pid, sids, role]) => {
+    Promise.all([getItem("@placeId"), getItem("@sectorIds"), getItem("@role"), getItem("@theme")]).then(
+      ([pid, sids, role, savedTheme]) => {
         setPlaceId(pid);
         setMySectorIds(sids ? JSON.parse(sids) : []);
         if (role === "admin") setIsAdminPreview(true);
+        if (savedTheme === "dark" || savedTheme === "light") setTheme(savedTheme);
       }
     );
   }, []);
@@ -109,10 +178,6 @@ export default function Bartender() {
       await soundRef.current.replayAsync();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setBlinking(p => [...p, id]);
-      Animated.sequence([
-        Animated.timing(blinkAnim, { toValue: 1, duration: 300, useNativeDriver: false }),
-        Animated.timing(blinkAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
-      ]).start();
       setTimeout(() => setBlinking(p => p.filter(x => x !== id)), 2000);
     },
     [audioUnlocked]
@@ -165,31 +230,50 @@ export default function Bartender() {
 
   /* ================= UI ================= */
 
+  const styles = useMemo(() => makeStyles(C), [C]);
+
   const headerLabel = mySectors.length > 0
     ? mySectors.map(s => s.name).join(" + ")
     : "ŠANK";
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f2f2f2" }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          {isAdminPreview ? (
-            <Pressable onPress={() => router.replace("/admin")} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Ionicons name="arrow-back" size={22} color="#111" />
-              <Text style={styles.title}>Admin  |  {headerLabel}</Text>
-            </Pressable>
-          ) : (
-            <Text style={styles.title}>{headerLabel}</Text>
-          )}
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{visibleOrders.length} AKTIVNIH</Text>
-          </View>
-        </View>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
+      {/* ── HEADER ── */}
+      <View style={styles.header}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {isAdminPreview && (
+            <Pressable
+              onPress={() => router.replace("/admin")}
+              hitSlop={12}
+            >
+              <Ionicons name="arrow-back" size={22} color={C.textMuted} />
+            </Pressable>
+          )}
+          <Text style={styles.title}>{headerLabel}</Text>
+        </View>
+        <Pressable onPress={toggleTheme} style={styles.themeToggle} hitSlop={10}>
+          <Ionicons
+            name={theme === "dark" ? "sunny-outline" : "moon-outline"}
+            size={22}
+            color={C.textSub}
+          />
+        </Pressable>
+        <View style={styles.countBadge}>
+          <Text style={styles.countNum}>{visibleOrders.length}</Text>
+          <Text style={styles.countLabel}>aktivnih</Text>
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
         {visibleOrders.map((o, idx) => {
           const elapsed = Math.floor((timeNow - o.createdAt) / 1000);
           const blink = blinking.includes(o.id);
+          const timerColor = urgencyColor(elapsed, C);
 
           const myItems = mySectorIds.length > 0
             ? o.items.filter(i => mySectorIds.includes(i.sectorId ?? ""))
@@ -199,47 +283,82 @@ export default function Bartender() {
             : [];
           const otherCollapsed = collapsedOther[o.id] !== false;
 
+          const grouped = myItems.reduce<Record<string, typeof myItems>>((acc, item) => {
+            const cat = item.category || "Ostalo";
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(item);
+            return acc;
+          }, {});
+
           return (
-            <Animated.View
+            <View
               key={o.id}
-              style={[styles.card, blink && { backgroundColor: "#b71c1c" }]}
+              style={[styles.card, blink && styles.cardAlert]}
             >
-              <View style={styles.rowBetween}>
-                <Text style={styles.orderIndex}>#{idx + 1}</Text>
-                <Text style={styles.waiter}>{o.waiterName}</Text>
+              {/* ── CARD HEADER ── */}
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderLeft}>
+                  <View style={styles.indexBadge}>
+                    <Text style={styles.indexText}>{idx + 1}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.waiterName}>{o.waiterName}</Text>
+                    {o.region ? (
+                      <Text style={styles.regionText}>{o.region}</Text>
+                    ) : null}
+                  </View>
+                </View>
+                <View style={[styles.timerPill, { borderColor: timerColor }]}>
+                  <Ionicons name="time-outline" size={13} color={timerColor} />
+                  <Text style={[styles.timerText, { color: timerColor }]}>
+                    {formatTime(elapsed)}
+                  </Text>
+                </View>
               </View>
 
-              {o.region ? <Text style={styles.region}>{o.region}</Text> : null}
+              {/* ── DIVIDER ── */}
+              <View style={styles.divider} />
 
-              {/* MY ITEMS — grouped by category */}
-              {(() => {
-                const grouped = myItems.reduce<Record<string, typeof myItems>>((acc, item) => {
-                  const cat = item.category || "Ostalo";
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(item);
-                  return acc;
-                }, {});
-                return Object.entries(grouped).map(([cat, items]) => (
-                  <View key={cat} style={{ marginTop: 8 }}>
-                    <Text style={styles.categoryHeader}>{cat.toUpperCase()}</Text>
-                    {items.map((item, ii) => (
-                      <View key={ii} style={styles.myItemRow}>
-                        <View style={styles.rowBetween}>
-                          <Text style={[styles.itemName, item.qty > 1 && styles.qtyHighlight]}>• {item.name}</Text>
-                          <Text style={[styles.qty, item.qty > 1 && styles.qtyHighlight]}>× {item.qty}</Text>
-                        </View>
-                        {item.note && (
-                          <View style={styles.note}>
-                            <Text style={styles.noteText}>⚠️ {item.note}</Text>
-                          </View>
-                        )}
+              {/* ── MY ITEMS ── */}
+              {Object.entries(grouped).map(([cat, items]) => (
+                <View key={cat} style={styles.categoryBlock}>
+                  <Text style={styles.categoryLabel}>{cat.toUpperCase()}</Text>
+                  {items.map((item, ii) => (
+                    <View key={ii} style={styles.itemRow}>
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {item.name}
+                      </Text>
+                      <View style={[
+                        styles.qtyBadge,
+                        item.qty > 1 && styles.qtyBadgeHigh,
+                      ]}>
+                        <Text style={[
+                          styles.qtyText,
+                          item.qty > 1 && styles.qtyTextHigh,
+                        ]}>
+                          ×{item.qty}
+                        </Text>
                       </View>
-                    ))}
-                  </View>
-                ));
-              })()}
+                    </View>
+                  ))}
+                  {items.filter(i => i.note).map((item, ii) => (
+                    <View key={`note-${ii}`} style={styles.itemNote}>
+                      <Ionicons name="warning-outline" size={14} color={C.warn} />
+                      <Text style={styles.itemNoteText}>{item.note}</Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
 
-              {/* OTHER ITEMS (collapsed by default) */}
+              {/* ── ORDER NOTE ── */}
+              {o.orderNote ? (
+                <View style={styles.orderNote}>
+                  <Ionicons name="document-text-outline" size={14} color="#93C5FD" />
+                  <Text style={styles.orderNoteText}>{o.orderNote}</Text>
+                </View>
+              ) : null}
+
+              {/* ── OTHER ITEMS ── */}
               {otherItems.length > 0 && (
                 <View style={styles.otherSection}>
                   <Pressable
@@ -247,64 +366,75 @@ export default function Bartender() {
                       setCollapsedOther(p => ({ ...p, [o.id]: !otherCollapsed }))
                     }
                     style={styles.otherToggle}
+                    hitSlop={8}
                   >
+                    <Ionicons
+                      name={otherCollapsed ? "chevron-forward" : "chevron-down"}
+                      size={14}
+                      color={C.textMuted}
+                    />
                     <Text style={styles.otherToggleText}>
-                      {otherCollapsed ? "▶" : "▼"} Ostale stavke ({otherItems.reduce((s, i) => s + i.qty, 0)})
+                      Ostale stavke ({otherItems.reduce((s, i) => s + i.qty, 0)})
                     </Text>
                   </Pressable>
                   {!otherCollapsed &&
                     otherItems.map((item, ii) => {
                       const s = sectors.find(x => x.id === item.sectorId);
                       return (
-                        <View key={ii} style={styles.otherItemRow}>
-                          <View style={styles.rowBetween}>
-                            <Text style={styles.otherItemName}>
-                              {s ? `${s.name} ` : ""}• {item.name}
-                            </Text>
-                            <Text style={styles.otherItemQty}>× {item.qty}</Text>
-                          </View>
+                        <View key={ii} style={styles.otherRow}>
+                          <Text style={styles.otherSector}>
+                            {s?.name ?? "—"}
+                          </Text>
+                          <Text style={styles.otherName} numberOfLines={1}>
+                            {item.name}
+                          </Text>
+                          <Text style={styles.otherQty}>×{item.qty}</Text>
                         </View>
                       );
                     })}
                 </View>
               )}
 
-              {o.orderNote && (
-                <View style={styles.orderNote}>
-                  <Text style={styles.noteText}>📝 {o.orderNote}</Text>
-                </View>
-              )}
-
-              <Text style={styles.time}>⏱ {formatTime(elapsed)}</Text>
-
+              {/* ── DONE BUTTON ── */}
               {mySectorIds.length > 0 && (
-                <Pressable style={styles.doneBtn} onPress={() => handleMarkDone(o)}>
-                  <Text style={styles.doneText}>ZAVRŠENO</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.doneBtn, pressed && styles.doneBtnPressed]}
+                  onPress={() => handleMarkDone(o)}
+                >
+                  <Ionicons name="checkmark" size={20} color={C.white} />
+                  <Text style={styles.doneBtnText}>ZAVRŠENO</Text>
                 </Pressable>
               )}
-            </Animated.View>
+            </View>
           );
         })}
 
         {visibleOrders.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Nema aktivnih narudžbi ✓</Text>
+          <View style={styles.empty}>
+            <Ionicons name="checkmark-circle-outline" size={56} color={C.border} />
+            <Text style={styles.emptyTitle}>Sve je gotovo</Text>
+            <Text style={styles.emptySub}>Nema aktivnih narudžbi</Text>
           </View>
         )}
       </ScrollView>
 
-      {/* AUDIO MODAL */}
+      {/* ── AUDIO MODAL ── */}
       <Modal visible={showAudioModal} transparent animationType="fade">
-        <View style={styles.modalBg}>
-          <View style={styles.modal}>
-            <Text style={{ fontSize: 20, fontWeight: "800" }}>
-              🔊 Zvuk obavijesti
-            </Text>
-            <Text style={{ marginVertical: 14, textAlign: "center" }}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme === "dark" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.45)" }]}>
+          <View style={[styles.modalBox, { backgroundColor: C.surface, borderColor: C.border }]}>
+            <View style={[styles.modalIcon, { backgroundColor: C.modalIconBg, borderColor: C.modalIconBorder }]}>
+              <Ionicons name="volume-high" size={28} color={C.accent} />
+            </View>
+            <Text style={[styles.modalTitle, { color: C.text }]}>Zvuk obavijesti</Text>
+            <Text style={[styles.modalBody, { color: C.textSub }]}>
               Omogući zvuk da odmah reagujete na nove narudžbe.
             </Text>
-            <Pressable style={styles.doneBtn} onPress={unlockAudio}>
-              <Text style={styles.doneText}>OMOGUĆI ZVUK</Text>
+            <Pressable
+              style={({ pressed }) => [styles.doneBtn, { marginTop: 0 }, pressed && styles.doneBtnPressed]}
+              onPress={unlockAudio}
+            >
+              <Ionicons name="volume-high" size={18} color={C.white} />
+              <Text style={styles.doneBtnText}>OMOGUĆI ZVUK</Text>
             </Pressable>
           </View>
         </View>
@@ -315,115 +445,345 @@ export default function Bartender() {
 
 /* ================= STYLES ================= */
 
-const styles = StyleSheet.create({
-  adminBackBtn: {
-    position: "absolute", top: 12, left: 12, zIndex: 99,
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#0E7C86", borderRadius: 20,
-    paddingHorizontal: 14, paddingVertical: 7,
-    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 4, elevation: 4,
-  },
-  adminBackBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  categoryHeader: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#999",
-    letterSpacing: 1,
-    marginBottom: 4,
-    marginTop: 2,
-  },
-  qtyHighlight: {
-    color: "#d32f2f",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  title: { fontSize: 24, fontWeight: "900" },
-  badge: {
-    backgroundColor: "#000",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  badgeText: { color: "#fff", fontWeight: "800" },
+const makeStyles = (C: typeof DARK) => StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: C.bg,
+    },
 
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 5,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  orderIndex: { fontSize: 20, fontWeight: "900" },
-  waiter: { fontSize: 18, fontWeight: "800", color: "#28a745" },
-  region: { fontSize: 13, color: "#888", marginBottom: 8 },
+    /* ── HEADER ── */
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: C.border,
+    },
+    adminBack: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      marginBottom: 4,
+    },
+    adminBackText: {
+      fontSize: 12,
+      color: C.textMuted,
+      fontWeight: "600",
+      letterSpacing: 0.5,
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: "800",
+      color: C.text,
+      letterSpacing: -0.5,
+    },
+    themeToggle: {
+      padding: 8,
+      marginRight: 8,
+    },
+    countBadge: {
+      alignItems: "center",
+      backgroundColor: C.surfaceHigh,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      minWidth: 64,
+      borderWidth: 1,
+      borderColor: C.border,
+    },
+    countNum: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: C.text,
+      lineHeight: 26,
+    },
+    countLabel: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: C.textMuted,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+    },
 
-  myItemRow: { marginBottom: 10, marginTop: 4 },
-  itemName: { fontSize: 20, fontWeight: "700", flex: 1 },
-  qty: { fontSize: 26, fontWeight: "900" },
+    /* ── LIST ── */
+    list: {
+      padding: 16,
+      gap: 12,
+    },
 
-  otherSection: {
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    paddingTop: 8,
-  },
-  otherToggle: { paddingVertical: 4 },
-  otherToggleText: { fontSize: 13, color: "#999", fontWeight: "600" },
-  otherItemRow: { marginBottom: 4, paddingLeft: 8 },
-  otherItemName: { fontSize: 14, color: "#aaa", flex: 1 },
-  otherItemQty: { fontSize: 14, color: "#aaa" },
+    /* ── CARD ── */
+    card: {
+      backgroundColor: C.surface,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: C.border,
+      ...Platform.select({
+        android: { elevation: 4 },
+        ios: { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+      }),
+    },
+    cardAlert: {
+      borderColor: C.danger,
+      backgroundColor: C.cardAlertBg,
+    },
 
-  note: {
-    backgroundColor: "#ffe082",
-    padding: 8,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  noteText: { fontSize: 16, fontWeight: "700" },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    cardHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      flex: 1,
+    },
+    indexBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: C.surfaceHigh,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    indexText: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: C.textSub,
+    },
+    waiterName: {
+      fontSize: 17,
+      fontWeight: "700",
+      color: C.text,
+    },
+    regionText: {
+      fontSize: 12,
+      color: C.textMuted,
+      marginTop: 1,
+    },
+    timerPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      backgroundColor: "transparent",
+    },
+    timerText: {
+      fontSize: 13,
+      fontWeight: "700",
+    },
 
-  orderNote: {
-    backgroundColor: "#bbdefb",
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-  },
+    divider: {
+      height: 1,
+      backgroundColor: C.border,
+      marginBottom: 12,
+    },
 
-  time: { fontSize: 16, marginTop: 8, color: "#555" },
+    /* ── ITEMS ── */
+    categoryBlock: {
+      marginBottom: 10,
+    },
+    categoryLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: C.textMuted,
+      letterSpacing: 1.5,
+      marginBottom: 6,
+    },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 6,
+      borderBottomWidth: 1,
+      borderBottomColor: C.surfaceHigh,
+    },
+    itemName: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: C.text,
+      flex: 1,
+      marginRight: 12,
+    },
+    qtyBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      backgroundColor: C.surfaceHigh,
+      minWidth: 40,
+      alignItems: "center",
+    },
+    qtyBadgeHigh: {
+      backgroundColor: C.dangerDim,
+    },
+    qtyText: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: C.textSub,
+    },
+    qtyTextHigh: {
+      color: "#FCA5A5",
+    },
+    itemNote: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 6,
+      backgroundColor: C.itemNoteBg,
+      borderRadius: 8,
+      padding: 8,
+      marginTop: 6,
+      borderWidth: 1,
+      borderColor: C.itemNoteBorder,
+    },
+    itemNoteText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: C.warn,
+      flex: 1,
+    },
 
-  doneBtn: {
-    marginTop: 12,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: "#28a745",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  doneText: { color: "#fff", fontSize: 18, fontWeight: "900" },
+    /* ── ORDER NOTE ── */
+    orderNote: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 6,
+      backgroundColor: C.orderNoteBg,
+      borderRadius: 8,
+      padding: 10,
+      marginTop: 10,
+      borderWidth: 1,
+      borderColor: C.orderNoteBorder,
+    },
+    orderNoteText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: C.orderNoteText,
+      flex: 1,
+    },
 
-  emptyState: { alignItems: "center", marginTop: 60 },
-  emptyText: { fontSize: 18, color: "#aaa", fontWeight: "600" },
+    /* ── OTHER ITEMS ── */
+    otherSection: {
+      marginTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: C.border,
+      paddingTop: 10,
+    },
+    otherToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingVertical: 4,
+    },
+    otherToggleText: {
+      fontSize: 13,
+      color: C.textMuted,
+      fontWeight: "600",
+    },
+    otherRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 5,
+      paddingLeft: 4,
+    },
+    otherSector: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: C.textMuted,
+      backgroundColor: C.surfaceHigh,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      overflow: "hidden",
+    },
+    otherName: {
+      fontSize: 13,
+      color: C.textSub,
+      flex: 1,
+    },
+    otherQty: {
+      fontSize: 13,
+      color: C.textMuted,
+      fontWeight: "700",
+    },
 
-  modalBg: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modal: {
-    backgroundColor: "#fff",
-    padding: 24,
-    borderRadius: 16,
-    width: "85%",
-    alignItems: "center",
-  },
+    /* ── DONE BUTTON ── */
+    doneBtn: {
+      marginTop: 14,
+      height: 54,
+      borderRadius: 14,
+      backgroundColor: C.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+    },
+    doneBtnPressed: {
+      backgroundColor: C.accentDim,
+    },
+    doneBtnText: {
+      color: C.white,
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+    },
+
+    /* ── EMPTY ── */
+    empty: {
+      alignItems: "center",
+      marginTop: 80,
+      gap: 10,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: C.textSub,
+    },
+    emptySub: {
+      fontSize: 14,
+      color: C.textMuted,
+      fontWeight: "500",
+    },
+
+    /* ── MODAL ── */
+    modalOverlay: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalBox: {
+      padding: 28,
+      borderRadius: 24,
+      width: "85%",
+      alignItems: "center",
+      borderWidth: 1,
+      gap: 12,
+    },
+    modalIcon: {
+      width: 60,
+      height: 60,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      marginBottom: 4,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "800",
+    },
+    modalBody: {
+      fontSize: 14,
+      textAlign: "center",
+      lineHeight: 20,
+      marginBottom: 4,
+    },
 });
 

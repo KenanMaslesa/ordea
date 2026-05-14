@@ -258,9 +258,8 @@ export default function WaiterScreen() {
       ),
       // headerTitleAlign: "center",
       headerLeft: isAdminPreview ? () => (
-        <Pressable onPress={() => router.replace("/admin")} style={{ flexDirection: "row", alignItems: "center", paddingLeft: 8, gap: 4 }}>
-          <Ionicons name="arrow-back" size={18} color="#fff" />
-          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>Admin</Text>
+        <Pressable onPress={() => router.replace("/admin")} style={{ paddingLeft: 8 }}>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
       ) : () => null,
       headerRight: () => {
