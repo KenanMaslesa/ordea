@@ -21,15 +21,11 @@ export const auth = getAuth(app);
 export default app;
 
 
-export const col = (name: string) =>
-    __DEV__ ? `${name}_dev` : name
-
 // Multi-tenant path helpers
-export const placesRoot = () =>
-    __DEV__ ? "dev_places" : "places"
+export const placesRoot = () => "places"
 
 export const ordersPath = (placeId: string) =>
-    `${placesRoot()}/${placeId}/orders`
+    `places/${placeId}/orders`
 
 export const menuPath = (placeId: string) =>
-    `${placesRoot()}/${placeId}/menu`
+    `places/${placeId}/menu`
