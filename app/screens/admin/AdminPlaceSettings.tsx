@@ -2,6 +2,7 @@ import { db, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import QRCodeLib from "qrcode";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -17,6 +18,7 @@ import {
   TextInput,
   View
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import ColorPicker, { HueSlider, Panel1, Preview } from "reanimated-color-picker";
 import { useTheme } from "../../context/ThemeContext";
 import { LocationMode, Place, Sector, Zone } from "../../types/order.types";
@@ -149,6 +151,8 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
   const [savedMsg, setSavedMsg] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState<string | null>(null);
   const [colorPickerVisible, setColorPickerVisible] = useState(false);
+  const [qrVisible, setQrVisible] = useState(false);
+  const qrRef = useRef<any>(null);
   const [pendingColor, setPendingColor] = useState(primaryColor);
   const savedOpacity = useRef(new Animated.Value(0)).current;
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -327,6 +331,95 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                 </Text>
               </Pressable>
             </View>
+
+            {/* QR kod — collapsible */}
+            <Pressable
+              onPress={() => setQrVisible(v => !v)}
+              style={{
+                flexDirection: "row", alignItems: "center", gap: 10,
+                marginTop: 12,
+                paddingVertical: 10, paddingHorizontal: 12,
+                backgroundColor: qrVisible ? primaryColor + "12" : (darkMode ? "#374151" : "#F3F4F6"),
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: qrVisible ? primaryColor + "40" : "transparent",
+              }}
+            >
+              <Ionicons name="qr-code-outline" size={18} color={qrVisible ? primaryColor : D.sectionHint} />
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: "600", color: qrVisible ? primaryColor : D.infoText }}>
+                QR kod za radnike
+              </Text>
+              <Ionicons name={qrVisible ? "chevron-up" : "chevron-down"} size={16} color={D.sectionHint} />
+            </Pressable>
+
+            {qrVisible && (() => {
+              const joinUrl = Platform.OS === "web"
+                ? `${typeof window !== "undefined" ? window.location.origin : ""}/join?code=${place.joinCode}`
+                : `ordea://join?code=${place.joinCode}`;
+              const handlePrint = async () => {
+                if (Platform.OS !== "web" || typeof window === "undefined") return;
+                const dataURL = await QRCodeLib.toDataURL(joinUrl, { width: 300, margin: 2 });
+                const win = window.open("", "_blank");
+                if (!win) return;
+                win.document.write(`
+                  <html><head><title>Ordea \u2013 ${place.name}</title>
+                  <style>
+                    @media print { @page { margin: 20mm; } }
+                    body{font-family:sans-serif;text-align:center;padding:48px;color:#111}
+                    h2{font-size:28px;font-weight:800;margin-bottom:8px}
+                    .subtitle{color:#555;font-size:15px;margin-bottom:24px}
+                    img{display:block;margin:0 auto;border:1px solid #eee;border-radius:12px;padding:12px}
+                    .or{color:#999;font-size:14px;margin:20px 0 8px}
+                    .code{font-size:36px;font-weight:800;letter-spacing:8px;color:#111}
+                    .footer{margin-top:28px;font-size:12px;color:#aaa}
+                  </style></head>
+                  <body>
+                    <h2>${place.name}</h2>
+                    <p class="subtitle">Skeniraj QR kod kamerom telefona da se prijavi\u0161 bez koda</p>
+                    <img src="${dataURL}" width="220" height="220" />
+                    <p class="or">ili upi\u0161i join kod:</p>
+                    <div class="code">${place.joinCode}</div>
+                    <p class="footer">Ordea \u2013 sistem narud\u017ebi</p>
+                    <script>setTimeout(()=>{window.print();},300);<\/script>
+                  </body></html>
+                `);
+                win.document.close();
+              };
+              return (
+                <View style={{ alignItems: "center", gap: 12, marginTop: 16, paddingBottom: 4 }}>
+                  <View style={{
+                    padding: 16, backgroundColor: "#fff",
+                    borderRadius: 16, shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08,
+                    shadowRadius: 8, elevation: 3,
+                  }}>
+                    <QRCode
+                      getRef={(ref: any) => { qrRef.current = ref; }}
+                      value={joinUrl}
+                      size={180}
+                      color="#111827"
+                      backgroundColor="#fff"
+                    />
+                  </View>
+                  <Text style={{ fontSize: 12, color: D.sectionHint, textAlign: "center", maxWidth: 240, lineHeight: 18 }}>
+                    Radnik skenira kamerom telefona → stranica se otvori → odabere ulogu. Nema unosa koda.
+                  </Text>
+                  {Platform.OS === "web" && (
+                    <Pressable
+                      onPress={handlePrint}
+                      style={{
+                        flexDirection: "row", alignItems: "center", gap: 6,
+                        borderWidth: 1.5, borderColor: darkMode ? "#4B5563" : "#D1D5DB",
+                        borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9,
+                      }}
+                    >
+                      <Ionicons name="print-outline" size={16} color={D.infoText} />
+                      <Text style={{ fontSize: 13, fontWeight: "600", color: D.infoText }}>Printaj QR kod</Text>
+                    </Pressable>
+                  )}
+                </View>
+              );
+            })()}
           </View>
         )}
 
