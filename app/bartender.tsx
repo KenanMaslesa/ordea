@@ -280,7 +280,7 @@ export default function Bartender() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} backgroundColor={C.bg} />
 
       {/* ── HEADER ── */}
       <View style={styles.header}>

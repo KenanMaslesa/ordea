@@ -55,11 +55,9 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const { primaryColor } = useTheme();
+function AppStatusBar() {
+  const { darkMode, primaryColor } = useTheme();
 
-  // Dinamički ažuriraj theme-color meta tag (browser chrome boja na mobilnom)
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const meta = document.querySelector("meta[name='theme-color']");
@@ -67,9 +65,20 @@ function RootLayoutNav() {
   }, [primaryColor]);
 
   return (
+    <StatusBar
+      backgroundColor={darkMode ? "#0D0D0F" : primaryColor}
+      barStyle={darkMode ? "light-content" : "light-content"}
+    />
+  );
+}
+
+function RootLayoutNav() {
+  const colorScheme = useColorScheme();
+
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppThemeProvider>
-      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+      <AppStatusBar />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />
