@@ -14,6 +14,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/components/useColorScheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import InstallPrompt from "./components/InstallPrompt";
 import { ThemeProvider as AppThemeProvider, useTheme } from "./context/ThemeContext";
 
 export {
@@ -74,6 +75,7 @@ function RootLayoutNav() {
           <Stack.Screen name="modal" options={{ presentation: "modal" }} />
         </Stack>
       </ThemeProvider>
+      <InstallPrompt />
       </AppThemeProvider>
     </GestureHandlerRootView>
   );
