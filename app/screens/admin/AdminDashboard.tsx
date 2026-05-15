@@ -1,4 +1,4 @@
-import { db, placesRoot } from "@/firebase";
+﻿import { db, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -92,23 +92,17 @@ function HourlyHeatmap({ data }: { data: Record<string, number> }) {
   const cellW = Math.floor((SW - 64) / 24) - 2;
   return (
     <View style={[styles.card, { backgroundColor: darkMode ? "#1F2937" : "#fff", borderColor: darkMode ? "#374151" : "#eee" }]}>
-      <View style={{ flexDirection: "row", gap: 2, flexWrap: "nowrap" }}>
+      <View style={{ flexDirection: "row", gap: 3, flexWrap: "nowrap", justifyContent: "center" }}>
         {Array.from({ length: 24 }, (_, h) => {
           const count = Number(data[h.toString()] ?? 0);
           const alpha = max > 0 ? 0.08 + (count / max) * 0.9 : 0.05;
           return (
-            <View key={h} style={{ alignItems: "center", width: cellW }}>
-              <View style={{ width: cellW, height: 32, backgroundColor: `rgba(14,124,134,${alpha.toFixed(2)})`, borderRadius: 3 }} />
-              {h % 4 === 0 && (
-                <Text style={{ fontSize: 8, color: labelColor, marginTop: 2 }}>{h}h</Text>
-              )}
+            <View key={h} style={{ alignItems: "center", width: cellW, paddingVertical: 5 }}>
+              <View style={{ width: cellW, height: 42, backgroundColor: `rgba(14,124,134,${alpha.toFixed(2)})`, borderRadius: 3 }} />
+              <Text style={{ fontSize: 7, color: labelColor, marginTop: 2 }}>{h}</Text>
             </View>
           );
         })}
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-        <Text style={{ fontSize: 10, color: labelColor }}>{t("admin.lessBusy")}</Text>
-        <Text style={{ fontSize: 10, color: labelColor }}>{t("admin.moreBusy")}</Text>
       </View>
     </View>
   );
@@ -305,11 +299,6 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
 
         {/* Ã¢â€â‚¬Ã¢â€â‚¬ KPI CARDS Ã¢â€â‚¬Ã¢â€â‚¬ */}
         <View style={styles.kpiRow}>
-          <View style={[styles.kpiCard, { backgroundColor: primaryColor }]}>
-            <Text style={[styles.kpiValue, { color: "#fff" }]}>{(stats?.revenue ?? 0).toFixed(2)}</Text>
-            <Text style={[styles.kpiLabel, { color: "rgba(255,255,255,0.7)" }]}>{t("admin.revenue")}</Text>
-            {revDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={revDiff} /></View>}
-          </View>
           <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
             <Text style={[styles.kpiValue, { color: primaryColor }]}>{stats?.ordersCount ?? 0}</Text>
             <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.ordersCount")}</Text>
@@ -317,18 +306,23 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           </View>
           <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
             <Text style={[styles.kpiValue, { color: primaryColor }]}>
-              {stats && stats.ordersCount > 0 ? (stats.revenue / stats.ordersCount).toFixed(2) : "Ã¢â‚¬â€"}
+              {stats && stats.ordersCount > 0 ? (stats.revenue / stats.ordersCount).toFixed(2) : "—"}
             </Text>
             <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.avgKm")}</Text>
           </View>
-        </View>
-        <View style={styles.kpiRow}>
           {avgCompletion && (
             <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
               <Text style={[styles.kpiValue, { color: primaryColor, fontSize: 16 }]}>{avgCompletion}</Text>
               <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.avgTime")}</Text>
             </View>
           )}
+        </View>
+        <View style={styles.kpiRow}>
+          <View style={[styles.kpiCard, { backgroundColor: primaryColor }]}>
+            <Text style={[styles.kpiValue, { color: "#fff" }]}>{(stats?.revenue ?? 0).toFixed(2)}</Text>
+            <Text style={[styles.kpiLabel, { color: "rgba(255,255,255,0.7)" }]}>{t("admin.revenue")}</Text>
+            {revDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={revDiff} /></View>}
+          </View>
           {cancellationRate !== null && Number(cancellationRate) > 0 && (
             <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: darkMode ? "#7F1D1D" : "#fee2e2" }]}>
               <Text style={[styles.kpiValue, { color: "#ef4444" }]}>{cancellationRate}%</Text>
@@ -378,7 +372,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <Text style={[styles.rowName, { color: D.rowName }]} numberOfLines={1}>{name}</Text>
-                    <Text style={styles.rowVal}>{qty}Ãƒ—</Text>
+                    <Text style={styles.rowVal}>{qty}×</Text>
                   </View>
                   <MiniBar value={qty} max={maxItem} />
                 </View>
@@ -419,7 +413,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
               const orders = stats?.waiterOrderCount?.[name] ?? 0;
               const totalMs = stats?.waiterTotalCompletionMs?.[name] ?? 0;
               const avgMs = orders > 0 ? totalMs / orders : 0;
-              const avgVal = orders > 0 ? (rev / orders).toFixed(2) : "Ã¢â‚¬â€";
+              const avgVal = orders > 0 ? (rev / orders).toFixed(2) : "—";
               return (
                 <View key={name} style={[styles.row, i < topWaiters.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
                   <Text style={[styles.rank, { color: D.rank }]}>{i + 1}.</Text>
@@ -432,7 +426,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                     <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
                       <Text style={[styles.sub, { color: D.sub }]}>{t("admin.ordersNum", { n: orders })}</Text>
                       <Text style={[styles.sub, { color: D.sub }]}>{t("admin.avgKmVal", { val: avgVal })}</Text>
-                      {avgMs > 0 && <Text style={[styles.sub, { color: D.sub }]}>Ã¢ÂÂ± {fmtMs(avgMs)}</Text>}
+                      {avgMs > 0 && <Text style={[styles.sub, { color: D.sub }]}>≈ {fmtMs(avgMs)}</Text>}
                     </View>
                   </View>
                 </View>
@@ -484,7 +478,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                         <Text style={[styles.rowName, { color: D.rowName }]}>{name}</Text>
                         {avgMs > 0 && (
                           <Text style={[styles.rowVal, { color: avgMs > 5 * 60_000 ? "#ef4444" : primaryColor }]}>
-                            Ã¢ÂÂ± {fmtMs(avgMs)}
+                            ≈ {fmtMs(avgMs)}
                           </Text>
                         )}
                       </View>

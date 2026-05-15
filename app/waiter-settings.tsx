@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { Pressable, SafeAreaView, StyleSheet, Switch, Text, View } from "react-native";
 import { useTheme } from "./context/ThemeContext";
 import { getItem, setItem } from "./helper";
 
@@ -12,6 +13,7 @@ export default function WaiterSettings() {
   const [headerTheme, setHeaderTheme] = useState<Theme>("white");
   const [sheetTheme, setSheetTheme] = useState<Theme>("white");
   const { darkMode, setDarkMode: toggleDarkMode, primaryColor } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   useEffect(() => {
@@ -61,56 +63,54 @@ export default function WaiterSettings() {
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color={primaryColor} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: D.title }]}>Postavke</Text>
+        <Text style={[styles.headerTitle, { color: D.title }]}>{t("waiterSettings.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: D.label }]}>TEMA</Text>
+        <Text style={[styles.sectionLabel, { color: D.label }]}>{t("waiterSettings.theme")}</Text>
         <View style={[styles.card, { backgroundColor: D.card, borderColor: D.border }]}>
-          <SegmentRow
-            label="Dark mode"
-            labelColor={D.rowLabel}
-            segBg={D.segBg}
-            value={darkMode ? "on" : "off"}
-            onChange={(val: string) => toggleDarkMode(val === "on")}
-            options={[
-              { label: "Uključen", value: "on" },
-              { label: "Isključen", value: "off" },
-            ]}
-          />
+          <View style={styles.row}>
+            <Text style={[styles.rowLabel, { color: D.rowLabel }]}>{t("drawer.darkMode")}</Text>
+            <Switch
+              value={darkMode}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: "#D1D5DB", true: primaryColor + "80" }}
+              thumbColor={darkMode ? primaryColor : "#fff"}
+            />
+          </View>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: D.label }]}>IZGLED ZAGLAVLJA</Text>
+        <Text style={[styles.sectionLabel, { color: D.label }]}>{t("waiterSettings.headerStyle")}</Text>
         <View style={[styles.card, { backgroundColor: D.card, borderColor: D.border }]}>
           <SegmentRow
-            label="Stil zaglavlja"
+            label={t("waiterSettings.headerStyleLabel")}
             labelColor={D.rowLabel}
             segBg={D.segBg}
             value={headerTheme}
             onChange={saveHeaderTheme}
             options={[
-              { label: "Primarna boja", value: "primaryColor" },
-              { label: "Bijelo", value: "white" },
+              { label: t("waiterSettings.primaryColor"), value: "primaryColor" },
+              { label: t("waiterSettings.white"), value: "white" },
             ]}
           />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: D.label }]}>IZGLED NARUDŽBE</Text>
+        <Text style={[styles.sectionLabel, { color: D.label }]}>{t("waiterSettings.orderStyle")}</Text>
         <View style={[styles.card, { backgroundColor: D.card, borderColor: D.border }]}>
           <SegmentRow
-            label="Donji panel"
+            label={t("waiterSettings.bottomPanel")}
             labelColor={D.rowLabel}
             segBg={D.segBg}
             value={sheetTheme}
             onChange={saveSheetTheme}
             options={[
-              { label: "Primarna boja", value: "primaryColor" },
-              { label: "Bijelo", value: "white" },
+              { label: t("waiterSettings.primaryColor"), value: "primaryColor" },
+              { label: t("waiterSettings.white"), value: "white" },
             ]}
           />
         </View>

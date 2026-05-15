@@ -139,8 +139,6 @@
     "trendRevenue": "Revenue trend",
     "trendDays": "last {{n}} days",
     "hourlyBusy": "Hourly activity",
-    "lessBusy": "Less busy",
-    "moreBusy": "More busy",
     "topItems": "Top items",
     "byQuantity": "by quantity",
     "noSoldItems": "No sold items",
@@ -248,5 +246,15 @@
     "setName": "Set name",
     "yourName": "Your name",
     "language": "Language"
+  },
+  "waiterSettings": {
+    "title": "Settings",
+    "theme": "THEME",
+    "headerStyle": "HEADER STYLE",
+    "headerStyleLabel": "Header style",
+    "primaryColor": "Primary color",
+    "white": "White",
+    "orderStyle": "ORDER STYLE",
+    "bottomPanel": "Bottom panel"
   }
 }

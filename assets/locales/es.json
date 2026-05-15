@@ -139,8 +139,6 @@
     "trendRevenue": "Tendencia de ingresos",
     "trendDays": "últimos {{n}} días",
     "hourlyBusy": "Actividad por hora",
-    "lessBusy": "Menos ocupado",
-    "moreBusy": "Más ocupado",
     "topItems": "Artículos más vendidos",
     "byQuantity": "por cantidad",
     "noSoldItems": "Sin artículos vendidos",
@@ -248,5 +246,15 @@
     "setName": "Establecer nombre",
     "yourName": "Su nombre",
     "language": "Idioma"
+  },
+  "waiterSettings": {
+    "title": "Ajustes",
+    "theme": "TEMA",
+    "headerStyle": "ESTILO DE ENCABEZADO",
+    "headerStyleLabel": "Estilo de encabezado",
+    "primaryColor": "Color primario",
+    "white": "Blanco",
+    "orderStyle": "ESTILO DE PEDIDO",
+    "bottomPanel": "Panel inferior"
   }
 }

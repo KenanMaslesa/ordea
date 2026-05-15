@@ -139,8 +139,6 @@
     "trendRevenue": "Trend prihoda",
     "trendDays": "zadnjih {{n}} dana",
     "hourlyBusy": "Gužva po satu",
-    "lessBusy": "Manje gužve",
-    "moreBusy": "Više gužve",
     "topItems": "Top artikli",
     "byQuantity": "po količini",
     "noSoldItems": "Nema prodatih artikala",
@@ -248,5 +246,15 @@
     "setName": "Postavi ime",
     "yourName": "Tvoje ime",
     "language": "Jezik"
+  },
+  "waiterSettings": {
+    "title": "Postavke",
+    "theme": "TEMA",
+    "headerStyle": "IZGLED ZAGLAVLJA",
+    "headerStyleLabel": "Stil zaglavlja",
+    "primaryColor": "Primarna boja",
+    "white": "Bijelo",
+    "orderStyle": "IZGLED NARUDŽBE",
+    "bottomPanel": "Donji panel"
   }
 }

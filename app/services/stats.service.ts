@@ -1,5 +1,5 @@
 import { db } from "@/firebase";
-import { doc, getDoc, increment, setDoc } from "firebase/firestore";
+import { doc, getDoc, increment, setDoc, updateDoc } from "firebase/firestore";
 import { Order, OrderItem } from "../types/order.types";
 import { DayStats, EMPTY_DAY_STATS } from "../types/stats.types";
 
@@ -19,15 +19,14 @@ export async function recordSectorDone(
 ): Promise<void> {
   const ref = doc(db, statsPath(placeId, dayKey));
   const k = safeKey(sectorId);
-  await setDoc(
-    ref,
-    {
-      [`sectorOrderCount.${k}`]: increment(1),
-      [`sectorTotalCompletionMs.${k}`]: increment(completionMs),
-      [`sectorCompletedCount.${k}`]: increment(1),
-    },
-    { merge: true }
-  );
+  // setDoc+merge creates the doc if it doesn't exist (no-op if it does)
+  // updateDoc is then required for dot-notation keys to be treated as nested paths
+  await setDoc(ref, {}, { merge: true });
+  await updateDoc(ref, {
+    [`sectorOrderCount.${k}`]: increment(1),
+    [`sectorTotalCompletionMs.${k}`]: increment(completionMs),
+    [`sectorCompletedCount.${k}`]: increment(1),
+  });
 }
 
 /** Called once when the whole order becomes done — tracks revenue, items, waiters, etc. */
@@ -70,7 +69,9 @@ export async function recordOrderDone(
   }
 
   const ref = doc(db, statsPath(placeId, dayKey));
-  await setDoc(ref, updates, { merge: true });
+  // updateDoc correctly interprets dot-notation as nested Firestore map paths.
+  // The document is guaranteed to exist (created by recordSectorDone above).
+  await updateDoc(ref, updates);
 }
 
 /** Called when an order is cancelled */

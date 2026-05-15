@@ -139,8 +139,6 @@
     "trendRevenue": "Gelir trendi",
     "trendDays": "son {{n}} gün",
     "hourlyBusy": "Saatlik aktivite",
-    "lessBusy": "Daha az yoğun",
-    "moreBusy": "Daha yoğun",
     "topItems": "En çok satanlar",
     "byQuantity": "adete göre",
     "noSoldItems": "Satılan ürün yok",
@@ -248,5 +246,15 @@
     "setName": "İsim belirle",
     "yourName": "Adınız",
     "language": "Dil"
+  },
+  "waiterSettings": {
+    "title": "Ayarlar",
+    "theme": "TEMA",
+    "headerStyle": "BAŞLIK GÖRÜNÜMÜ",
+    "headerStyleLabel": "Başlık stili",
+    "primaryColor": "Ana renk",
+    "white": "Beyaz",
+    "orderStyle": "SİPARİŞ GÖRÜNÜMÜ",
+    "bottomPanel": "Alt panel"
   }
 }

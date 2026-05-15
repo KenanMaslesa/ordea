@@ -218,7 +218,7 @@ export default function WaiterScreen() {
   }, [placeId]);
 
   const sheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => [90, "45%", "85%"], []);
+  const snapPoints = useMemo(() => [80, "45%", "85%"], []);
 
   const badgeAnim = useRef<{ [key: string]: Animated.Value }>({}).current;
   const navigation = useNavigation();
@@ -321,7 +321,7 @@ export default function WaiterScreen() {
             width: 36, height: 36, borderRadius: 10,
             backgroundColor: headerTheme === "primaryColor" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : primaryColor + "20",
             borderWidth: headerTheme !== "primaryColor" && !darkMode ? 1 : 0,
-            borderColor: primaryColor,
+            borderColor: primaryColor + "30",
             alignItems: "center", justifyContent: "center",
           }}>
             <Ionicons name="menu" size={20} color={headerTheme === "primaryColor" ? "#fff" : darkMode ? "#E5E7EB" : primaryColor} />
@@ -341,7 +341,7 @@ export default function WaiterScreen() {
                 width: 36, height: 36, borderRadius: 10,
                 backgroundColor: headerTheme === "primaryColor" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : primaryColor + "20",
                 borderWidth: headerTheme !== "primaryColor" && !darkMode ? 1 : 0,
-                borderColor: primaryColor,
+                borderColor: primaryColor + "30",
                 alignItems: "center", justifyContent: "center",
               }}>
                 <Ionicons name="receipt-outline" size={20} color={headerTheme === "primaryColor" ? "#fff" : darkMode ? "#E5E7EB" : primaryColor} />
@@ -381,7 +381,7 @@ export default function WaiterScreen() {
         shadowRadius: 4,
         elevation: 3,
       },
-      headerShadowVisible: !darkMode && headerTheme !== "primaryColor",
+      headerShadowVisible: false,
       headerTintColor: headerTheme === "primaryColor" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B",
     });
   }, [navigation, waiterName, myOrders, headerTheme, darkMode, primaryColor, loading]);
@@ -697,7 +697,7 @@ export default function WaiterScreen() {
                   active && {
                     backgroundColor: darkMode ? primaryColor + "35" : primaryColor + "18",
                     borderWidth: 1,
-                    borderColor: primaryColor,
+                    borderColor: primaryColor + "30",
                   },
                 ]}
               >
@@ -720,7 +720,6 @@ export default function WaiterScreen() {
           }}
         />
       </View>
-      <View style={{ height: 1, backgroundColor: DM.catBorder }} />
       {dynamicMenu.length === 0 ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color={primaryColor} />
@@ -762,13 +761,18 @@ export default function WaiterScreen() {
                         onPress={() => addItem(item, sub.name)}
                         style={[
                           styles.itemCard,
-                          { backgroundColor: selected ? primaryColor : DM.cardBg },
+                          selected && {
+                            backgroundColor: darkMode ? primaryColor + "35" : primaryColor + "15",
+                            borderWidth: 1.5,
+                            borderColor: primaryColor + "50",
+                          },
+                          !selected && { backgroundColor: DM.cardBg },
                         ]}
                       >
                         <Text
                           style={[
                             styles.itemName,
-                            { color: selected ? "#fff" : DM.cardText },
+                            { color: selected ? primaryColor : DM.cardText },
                           ]}
                         >
                           {item.name}
@@ -784,23 +788,30 @@ export default function WaiterScreen() {
 
                         {selected && (
                           <Animated.View
-                            style={[
-                              styles.badge,
-                              { backgroundColor: DM.badgeBg },
-                              {
-                                transform: [{ scale: badgeAnim[item.id] || 1 }],
-                              },
-                            ]}
+                            style={{
+                              position: "absolute",
+                              top: 8,
+                              right: 8,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 6,
+                              transform: [{ scale: badgeAnim[item.id] || 1 }],
+                            }}
                           >
                             <Pressable
-                              style={styles.badgeMinus}
                               onPress={() => removeItem(item.id)}
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 12,
+                                backgroundColor: primaryColor,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
                             >
-                              <Text style={styles.badgeMinusText}>–</Text>
+                              <Text style={{ color: "#fff", fontWeight: "900", fontSize: 16, includeFontPadding: false }}>–</Text>
                             </Pressable>
-                            <View style={styles.badgeQty}>
-                              <Text style={styles.badgeQtyText}>{qty}</Text>
-                            </View>
+                            <Text style={{ color: primaryColor, fontWeight: "800", fontSize: 15, minWidth: 16, textAlign: "center" }}>{qty}</Text>
                           </Animated.View>
                         )}
                       </Pressable>
@@ -821,36 +832,49 @@ export default function WaiterScreen() {
         snapPoints={snapPoints}
         enablePanDownToClose={false}
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: SC.bg }}
-        handleIndicatorStyle={{ backgroundColor: SC.handle }}
-        style={{
+        backgroundStyle={{
+          backgroundColor: SC.bg,
           shadowColor: SC.shadow,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.18,
           shadowRadius: 12,
           elevation: 20,
         }}
+        handleIndicatorStyle={{ backgroundColor: SC.handle }}
       >
         <BottomSheetView style={styles.sheet}>
           <Pressable
-            onPress={() => sheetRef.current?.snapToIndex(2)}
-            style={[styles.sheetHeader, { backgroundColor: SC.headerBg, borderColor: SC.headerBorder }]}
+            onPress={() => sheetRef.current?.snapToIndex(1)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              marginBottom: 4,
+              backgroundColor: darkMode ? "#374151" : primaryColor + "15",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: darkMode ? "#4B5563" : primaryColor + "30",
+            }}
           >
-            <Text style={[styles.sheetTitle, { color: SC.title }]}>
-              Narudžba ({order.reduce((s, i) => s + i.quantity, 0)})
+            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: SC.title }} />
+            <Text style={{ fontWeight: "700", fontSize: 15, color: SC.title, flex: 1 }}>
+              {`Narudžba (${order.reduce((s, i) => s + i.quantity, 0)})`}
             </Text>
             {locationMode !== "none" && (
               <Pressable
-                onPress={() => setShowZoneSheet(true)}
+                onPress={(e) => { e.stopPropagation(); setShowZoneSheet(true); }}
                 style={{
-                  marginTop: 8,
-                  padding: 6,
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
                   backgroundColor: SC.zoneBg,
                   borderRadius: 8,
-                  alignSelf: "flex-start",
+                  borderWidth: 1,
+                  borderColor: SC.zoneText + "40",
                 }}
               >
-                <Text style={{ fontWeight: "700", color: SC.zoneText }}>
+                <Text style={{ fontWeight: "700", fontSize: 12, color: SC.zoneText }}>
                   {
                     locationMode === "zones" ? (selectedZone || t("waiter.selectZone")) :
                     locationMode === "tables" ? (selectedTable ? t("waiter.tableLabel", { n: selectedTable }) : t("waiter.selectTable")) :

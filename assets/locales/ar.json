@@ -139,8 +139,6 @@
     "trendRevenue": "اتجاه الإيرادات",
     "trendDays": "آخر {{n}} يوماً",
     "hourlyBusy": "النشاط بالساعة",
-    "lessBusy": "أقل ازدحاماً",
-    "moreBusy": "أكثر ازدحاماً",
     "topItems": "أكثر العناصر مبيعاً",
     "byQuantity": "حسب الكمية",
     "noSoldItems": "لا توجد عناصر مباعة",
@@ -248,5 +246,15 @@
     "setName": "تعيين الاسم",
     "yourName": "اسمك",
     "language": "اللغة"
+  },
+  "waiterSettings": {
+    "title": "الإعدادات",
+    "theme": "المظهر",
+    "headerStyle": "مظهر الرأس",
+    "headerStyleLabel": "نمط الرأس",
+    "primaryColor": "اللون الرئيسي",
+    "white": "أبيض",
+    "orderStyle": "مظهر الطلب",
+    "bottomPanel": "اللوحة السفلية"
   }
 }
