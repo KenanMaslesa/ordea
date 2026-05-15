@@ -23,6 +23,7 @@ import {
   View,
 } from "react-native";
 import { MENU } from "../../../assets/data";
+import { useTheme } from "../../context/ThemeContext";
 import { incrementMenuVersion } from "../../services/place.service";
 import { MenuNode, Sector } from "../../types/order.types";
 
@@ -42,6 +43,7 @@ const CATEGORY_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
 
 interface Props {
   placeId: string;
+  onMenuPress?: () => void;
 }
 
 type ModalState =
@@ -65,7 +67,77 @@ function getAllDescendantIds(nodes: MenuNode[], id: string): string[] {
   return result;
 }
 
-export default function AdminSettings({ placeId }: Props) {
+export default function AdminSettings({ placeId, onMenuPress }: Props) {
+  const { darkMode } = useTheme();
+
+  const D = darkMode ? {
+    root: "#111827",
+    headerBg: "#1F2937",
+    headerBorder: "#374151",
+    headerTitle: "#F9FAFB",
+    hamburgerBox: "#374151",
+    rowOuter: "#1F2937",
+    rowBorder: "#374151",
+    nameInput: "#E5E7EB",
+    itemName: "#9CA3AF",
+    priceInput: "#E5E7EB",
+    priceInputBorder: "#374151",
+    moveBtn: "#374151",
+    moveBtnIcon: "#9CA3AF",
+    sectorChip: "#374151",
+    sectorChipBorder: "#4B5563",
+    modalBox: "#1F2937",
+    modalInput: "#111827",
+    modalInputBorder: "#374151",
+    modalInputText: "#E5E7EB",
+    fieldLabel: "#9CA3AF",
+    cancelBtn: "#374151",
+    cancelBtnText: "#E5E7EB",
+    typeBtnBorder: "#4B5563",
+    typeBtnText: "#9CA3AF",
+    deleteConfirmText: "#E5E7EB",
+    sampleText: "#6B7280",
+    placeholder: "#6B7280",
+    emptyText: "#6B7280",
+    iconPickerScroll: "#1a2637",
+    iconPickerBorder: "#374151",
+    iconPickerItem: "#374151",
+    iconPickerItemBorder: "#4B5563",
+  } : {
+    root: "#f9f9f9",
+    headerBg: "#fff",
+    headerBorder: "#F0F0F0",
+    headerTitle: "#18181B",
+    hamburgerBox: "#F0FDFA",
+    rowOuter: "#fff",
+    rowBorder: "#eee",
+    nameInput: "#1a1a1a",
+    itemName: "#555",
+    priceInput: "#333",
+    priceInputBorder: "#ddd",
+    moveBtn: "#e8e8e8",
+    moveBtnIcon: "#555",
+    sectorChip: "#f9f9f9",
+    sectorChipBorder: "#ddd",
+    modalBox: "#fff",
+    modalInput: "#fafafa",
+    modalInputBorder: "#ddd",
+    modalInputText: "#1a1a1a",
+    fieldLabel: "#888",
+    cancelBtn: "#f0f0f0",
+    cancelBtnText: "#555",
+    typeBtnBorder: "#ccc",
+    typeBtnText: "#555",
+    deleteConfirmText: "#333",
+    sampleText: "#555",
+    placeholder: "#A1A1AA",
+    emptyText: "#888",
+    iconPickerScroll: "#f0fafb",
+    iconPickerBorder: "#b2dfdf",
+    iconPickerItem: "#fff",
+    iconPickerItemBorder: "#ddd",
+  };
+
   const [nodes, setNodes] = useState<MenuNode[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -256,7 +328,7 @@ export default function AdminSettings({ placeId }: Props) {
 
       return (
         <View key={node.id} style={{ marginLeft: depth * 14, marginBottom: 6 }}>
-          <View style={[styles.rowOuter]}>
+          <View style={[styles.rowOuter, { backgroundColor: D.rowOuter, borderColor: D.rowBorder }]}>
             <View style={styles.row}>
               {!isItem ? (
                 <Pressable onPress={() => toggleCollapse(node.id)} style={styles.collapseBtn}>
@@ -273,17 +345,18 @@ export default function AdminSettings({ placeId }: Props) {
               )}
 
               <TextInput
-                style={[styles.nameInput, isItem && styles.itemNameInput]}
+                style={[styles.nameInput, isItem && styles.itemNameInput, { color: isItem ? D.itemName : D.nameInput }]}
                 value={node.name}
                 onChangeText={text => updateName(node.id, text)}
               />
 
               {isItem && (
                 <TextInput
-                  style={styles.priceInput}
+                  style={[styles.priceInput, { color: D.priceInput, borderColor: D.priceInputBorder, backgroundColor: D.rowOuter }]}
                   value={localPrices[node.id] ?? node.price?.toString() ?? ""}
                   keyboardType="decimal-pad"
                   placeholder="0.00"
+                  placeholderTextColor={D.placeholder}
                   onChangeText={text => setLocalPrices(p => ({ ...p, [node.id]: text }))}
                   onBlur={() => {
                     const raw = localPrices[node.id];
@@ -298,7 +371,7 @@ export default function AdminSettings({ placeId }: Props) {
               {isItem && sectors.length > 0 && (
                 <Pressable
                   onPress={() => setSectorPickerOpen(sectorPickerOpen === node.id ? null : node.id)}
-                  style={[styles.sectorChip, node.sectorId ? styles.sectorChipActive : undefined]}
+                  style={[styles.sectorChip, { backgroundColor: D.sectorChip, borderColor: D.sectorChipBorder }, node.sectorId ? styles.sectorChipActive : undefined]}
                 >
                   <Ionicons
                     name={(sectors.find(s => s.id === node.sectorId)?.icon as any) || "help-circle-outline"}
@@ -314,11 +387,11 @@ export default function AdminSettings({ placeId }: Props) {
                 </Pressable>
               )}
 
-              <Pressable onPress={() => moveNode(node, "up")} style={styles.moveBtn}>
-                <Ionicons name="arrow-up" size={14} color="#555" />
+              <Pressable onPress={() => moveNode(node, "up")} style={[styles.moveBtn, { backgroundColor: D.moveBtn }]}>
+                <Ionicons name="arrow-up" size={14} color={D.moveBtnIcon} />
               </Pressable>
-              <Pressable onPress={() => moveNode(node, "down")} style={styles.moveBtn}>
-                <Ionicons name="arrow-down" size={14} color="#555" />
+              <Pressable onPress={() => moveNode(node, "down")} style={[styles.moveBtn, { backgroundColor: D.moveBtn }]}>
+                <Ionicons name="arrow-down" size={14} color={D.moveBtnIcon} />
               </Pressable>
               <Pressable onPress={() => deleteNode(node)} style={styles.deleteBtn}>
                 <Ionicons name="trash" size={14} color="#ef4444" />
@@ -354,7 +427,24 @@ export default function AdminSettings({ placeId }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f9f9f9" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: D.root }}>
+      {/* ── HEADER ── */}
+      <View style={{
+        flexDirection: "row", alignItems: "center",
+        backgroundColor: D.headerBg,
+        paddingHorizontal: 8, paddingVertical: 10,
+        borderBottomWidth: 1, borderBottomColor: D.headerBorder,
+        shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06, shadowRadius: 4, elevation: 3,
+      }}>
+        <Pressable onPress={onMenuPress} hitSlop={12} style={{ padding: 6 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: D.hamburgerBox, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="menu" size={20} color="#0E7C86" />
+          </View>
+        </Pressable>
+        <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: D.headerTitle, letterSpacing: -0.3 }}>Meni</Text>
+        <View style={{ width: 44 }} />
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -368,10 +458,8 @@ export default function AdminSettings({ placeId }: Props) {
           style={{ flex: 1 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.header}>Upravljanje menijem</Text>
-
           {!placeId ? (
-            <Text style={{ color: "#888", textAlign: "center", marginTop: 32 }}>Učitavanje...</Text>
+            <Text style={{ color: D.emptyText, textAlign: "center", marginTop: 32 }}>Učitavanje...</Text>
           ) : (
             <>
               {renderChildren(null)}
@@ -396,11 +484,11 @@ export default function AdminSettings({ placeId }: Props) {
 
       <Modal visible={!!modal} transparent animationType="fade" onRequestClose={() => setModal(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setModal(null)}>
-          <Pressable style={styles.modalBox} onPress={e => e.stopPropagation()}>
+          <Pressable style={[styles.modalBox, { backgroundColor: D.modalBox }]} onPress={e => e.stopPropagation()}>
             <Text style={styles.modalTitle}>
               {modal?.mode === "edit"
-                ? `Uredi: ${modal.node.name}`
-                : modal?.parentId === null
+                ? `Uredi: ${(modal as any).node.name}`
+                : modal?.mode === "add" && modal.parentId === null
                 ? "Nova kategorija"
                 : "Dodaj unutar kategorije"}
             </Text>
@@ -409,17 +497,17 @@ export default function AdminSettings({ placeId }: Props) {
               <View style={styles.typeRow}>
                 <Pressable
                   onPress={() => setModalType("category")}
-                  style={[styles.typeBtn, modalType === "category" && styles.typeBtnActive]}
+                  style={[styles.typeBtn, { borderColor: D.typeBtnBorder }, modalType === "category" && styles.typeBtnActive]}
                 >
-                  <Text style={[styles.typeBtnText, modalType === "category" && { color: "#fff" }]}>
+                  <Text style={[styles.typeBtnText, { color: D.typeBtnText }, modalType === "category" && { color: "#fff" }]}>
                     Kategorija
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setModalType("item")}
-                  style={[styles.typeBtn, modalType === "item" && styles.typeBtnActive]}
+                  style={[styles.typeBtn, { borderColor: D.typeBtnBorder }, modalType === "item" && styles.typeBtnActive]}
                 >
-                  <Text style={[styles.typeBtnText, modalType === "item" && { color: "#fff" }]}>
+                  <Text style={[styles.typeBtnText, { color: D.typeBtnText }, modalType === "item" && { color: "#fff" }]}>
                     Artikal
                   </Text>
                 </Pressable>
@@ -429,18 +517,18 @@ export default function AdminSettings({ placeId }: Props) {
             {modalType === "category" &&
               (modal?.mode === "add" ? modal.parentId === null : (modal as any)?.node?.parentId === null) && (
                 <>
-                  <Text style={styles.fieldLabel}>Ikona kategorije (opciono)</Text>
+                  <Text style={[styles.fieldLabel, { color: D.fieldLabel }]}>Ikona kategorije (opciono)</Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={styles.iconPickerScroll}
+                    style={[styles.iconPickerScroll, { backgroundColor: D.iconPickerScroll, borderColor: D.iconPickerBorder }]}
                     contentContainerStyle={styles.iconPickerRow}
                     keyboardShouldPersistTaps="handled"
                   >
                     {CATEGORY_ICONS.map(ic => (
                       <Pressable
                         key={ic}
-                        style={[styles.iconPickerItem, modalEmoji === ic && styles.iconPickerItemActive]}
+                        style={[styles.iconPickerItem, { backgroundColor: D.iconPickerItem, borderColor: D.iconPickerItemBorder }, modalEmoji === ic && styles.iconPickerItemActive]}
                         onPress={() => setModalEmoji(modalEmoji === ic ? "" : ic)}
                       >
                         <Ionicons name={ic} size={22} color={modalEmoji === ic ? "#fff" : "#555"} />
@@ -450,28 +538,30 @@ export default function AdminSettings({ placeId }: Props) {
                 </>
               )}
 
-            <Text style={styles.fieldLabel}>Naziv</Text>
+            <Text style={[styles.fieldLabel, { color: D.fieldLabel }]}>Naziv</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, { backgroundColor: D.modalInput, borderColor: D.modalInputBorder, color: D.modalInputText }]}
               value={modalName}
               onChangeText={setModalName}
               placeholder="Unesite naziv..."
+              placeholderTextColor={D.placeholder}
               autoFocus
             />
 
             {modalType === "item" && (
               <>
-                <Text style={styles.fieldLabel}>Cijena (KM)</Text>
+                <Text style={[styles.fieldLabel, { color: D.fieldLabel }]}>Cijena (KM)</Text>
                 <TextInput
-                  style={styles.modalInput}
+                  style={[styles.modalInput, { backgroundColor: D.modalInput, borderColor: D.modalInputBorder, color: D.modalInputText }]}
                   value={modalPrice}
                   onChangeText={setModalPrice}
                   placeholder="0.00"
+                  placeholderTextColor={D.placeholder}
                   keyboardType="numeric"
                 />
                 {sectors.length > 0 && (
                   <>
-                    <Text style={styles.fieldLabel}>Sektor</Text>
+                    <Text style={[styles.fieldLabel, { color: D.fieldLabel }]}>Sektor</Text>
                     <View style={styles.sectorPicker}>
                       {sectors.map(s => (
                         <Pressable
@@ -491,8 +581,8 @@ export default function AdminSettings({ placeId }: Props) {
             )}
 
             <View style={styles.modalActions}>
-              <Pressable onPress={() => setModal(null)} style={styles.cancelBtn}>
-                <Text style={styles.cancelBtnText}>Otkaži</Text>
+              <Pressable onPress={() => setModal(null)} style={[styles.cancelBtn, { backgroundColor: D.cancelBtn }]}>
+                <Text style={[styles.cancelBtnText, { color: D.cancelBtnText }]}>Otkaži</Text>
               </Pressable>
               <Pressable onPress={handleSave} style={styles.saveBtn}>
                 <Text style={styles.saveBtnText}>
@@ -506,24 +596,24 @@ export default function AdminSettings({ placeId }: Props) {
       {/* Sample menu confirmation modal */}
       <Modal visible={showSampleModal} transparent animationType="fade" onRequestClose={() => setShowSampleModal(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => !loadingSample && setShowSampleModal(false)}>
-          <Pressable style={styles.modalBox} onPress={e => e.stopPropagation()}>
+          <Pressable style={[styles.modalBox, { backgroundColor: D.modalBox }]} onPress={e => e.stopPropagation()}>
             <View style={{ alignItems: "center", marginBottom: 12 }}>
               <Ionicons name="sparkles" size={36} color="#0E7C86" />
             </View>
             <Text style={styles.modalTitle}>Primjer menija</Text>
-            <Text style={{ fontSize: 14, color: "#555", marginBottom: 20, lineHeight: 20 }}>
+            <Text style={{ fontSize: 14, color: D.sampleText, marginBottom: 20, lineHeight: 20 }}>
               Ovo će dodati kompletan primjer menija (kafić/bar) sa kategorijama, potkategorijama i artiklima.
               {"\n\n"}Artiklima će biti dodijeljen prvi dostupni sektor.
             </Text>
             {loadingSample ? (
               <View style={{ alignItems: "center", paddingVertical: 12 }}>
                 <ActivityIndicator size="large" color="#0E7C86" />
-                <Text style={{ marginTop: 10, color: "#888", fontSize: 13 }}>Dodavanje artikala...</Text>
+                <Text style={{ marginTop: 10, color: D.sampleText, fontSize: 13 }}>Dodavanje artikala...</Text>
               </View>
             ) : (
               <View style={styles.modalActions}>
-                <Pressable onPress={() => setShowSampleModal(false)} style={styles.cancelBtn}>
-                  <Text style={styles.cancelBtnText}>Otkaži</Text>
+                <Pressable onPress={() => setShowSampleModal(false)} style={[styles.cancelBtn, { backgroundColor: D.cancelBtn }]}>
+                  <Text style={[styles.cancelBtnText, { color: D.cancelBtnText }]}>Otkaži</Text>
                 </Pressable>
                 <Pressable onPress={loadSampleMenu} style={styles.saveBtn}>
                   <Text style={styles.saveBtnText}>Učitaj</Text>
@@ -536,15 +626,15 @@ export default function AdminSettings({ placeId }: Props) {
       {/* Delete confirmation modal */}
       <Modal visible={!!deleteConfirm} transparent animationType="fade" onRequestClose={() => setDeleteConfirm(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setDeleteConfirm(null)}>
-          <Pressable style={styles.modalBox} onPress={e => e.stopPropagation()}>
+          <Pressable style={[styles.modalBox, { backgroundColor: D.modalBox }]} onPress={e => e.stopPropagation()}>
             <Text style={[styles.modalTitle, { color: "#ef4444" }]}>Brisanje</Text>
-            <Text style={{ fontSize: 15, color: "#333", marginBottom: 20 }}>
+            <Text style={{ fontSize: 15, color: D.deleteConfirmText, marginBottom: 20 }}>
               Obrisati "{deleteConfirm?.name}"
               {deleteConfirm?.type === "category" ? " i sve unutra?" : "?"}
             </Text>
             <View style={styles.modalActions}>
-              <Pressable onPress={() => setDeleteConfirm(null)} style={styles.cancelBtn}>
-                <Text style={styles.cancelBtnText}>Otkaži</Text>
+              <Pressable onPress={() => setDeleteConfirm(null)} style={[styles.cancelBtn, { backgroundColor: D.cancelBtn }]}>
+                <Text style={[styles.cancelBtnText, { color: D.cancelBtnText }]}>Otkaži</Text>
               </Pressable>
               <Pressable onPress={confirmDelete} style={[styles.saveBtn, { backgroundColor: "#ef4444" }]}>
                 <Text style={styles.saveBtnText}>Obriši</Text>

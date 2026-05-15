@@ -12,14 +12,36 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useTheme } from "./context/ThemeContext";
 import { setItem } from "./helper";
 import { getAdminPlace } from "./services/place.service";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const D = darkMode ? {
+    wrapper: "#111827",
+    subtitle: "#9CA3AF",
+    input: "#1F2937",
+    inputBorder: "#374151",
+    inputText: "#E5E7EB",
+    placeholder: "#6B7280",
+    link: "#22D3EE",
+    linkBack: "#6B7280",
+  } : {
+    wrapper: "#F4F5F7",
+    subtitle: "#888",
+    input: "#fff",
+    inputBorder: "#ddd",
+    inputText: "#18181B",
+    placeholder: "#A1A1AA",
+    link: "#0E7C86",
+    linkBack: "#aaa",
+  };
 
   const handleLogin = async () => {
     if (!email || !password)
@@ -52,23 +74,25 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.wrapper}
+      style={[styles.wrapper, { backgroundColor: D.wrapper }]}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: D.wrapper }]}>
         <Text style={styles.title}>Admin prijava</Text>
-        <Text style={styles.subtitle}>Samo za administratore objekta</Text>
+        <Text style={[styles.subtitle, { color: D.subtitle }]}>Samo za administratore objekta</Text>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
           placeholder="Email"
+          placeholderTextColor={D.placeholder}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
           placeholder="Lozinka"
+          placeholderTextColor={D.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -83,11 +107,11 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable onPress={() => router.replace("/register")} style={styles.linkBtn}>
-          <Text style={styles.linkText}>Nemate nalog? Registrujte se</Text>
+          <Text style={[styles.linkText, { color: D.link }]}>Nemate nalog? Registrujte se</Text>
         </Pressable>
 
         <Pressable onPress={() => router.replace("/join")} style={styles.linkBtn}>
-          <Text style={[styles.linkText, { color: "#aaa" }]}>← Nazad na join</Text>
+          <Text style={[styles.linkText, { color: D.linkBack }]}>← Nazad na join</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

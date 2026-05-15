@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { db, placesRoot } from "../firebase";
+import SideDrawer from "./components/SideDrawer";
+import { useTheme } from "./context/ThemeContext";
 import { getItem, setItem } from "./helper";
 import useAuth from "./hooks/useAuth";
 import BartenderHistoryScreen from "./screens/BartenderHistoryScreen";
@@ -25,7 +27,6 @@ import { Order, Sector } from "./types/order.types";
 import { AppTheme } from "./types/theme.types";
 
 /* ---------------- THEME ---------------- */
-type Theme = "dark" | "light";
 
 const DARK: AppTheme = {
   bg: "#0D0D0F",
@@ -102,6 +103,7 @@ export default function Bartender() {
   useAuth("bartender");
 
   const router = useRouter();
+  const { darkMode, setDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
   const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -113,6 +115,7 @@ export default function Bartender() {
   const [mySectorIds, setMySectorIds] = useState<string[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [pendingOfflineDoneCount, setPendingOfflineDoneCount] = useState(0);
   const [reconnectedCount, setReconnectedCount] = useState(0);
@@ -121,25 +124,17 @@ export default function Bartender() {
   const pendingOfflineDoneRef = useRef(0);
 
   const soundRef = useRef<Audio.Sound | null>(null);
-  const [theme, setTheme] = useState<Theme>("dark");
 
-  const C = useMemo(() => theme === "dark" ? DARK : LIGHT, [theme]);
-
-  const toggleTheme = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    setItem("@theme", next);
-  };
+  const C = darkMode ? DARK : LIGHT;
 
   /* ---------- LOAD STORAGE ---------- */
 
   useEffect(() => {
-    Promise.all([getItem("@placeId"), getItem("@sectorIds"), getItem("@role"), getItem("@theme")]).then(
-      ([pid, sids, role, savedTheme]) => {
+    Promise.all([getItem("@placeId"), getItem("@sectorIds"), getItem("@role")]).then(
+      ([pid, sids, role]) => {
         setPlaceId(pid);
         setMySectorIds(sids ? JSON.parse(sids) : []);
         if (role === "admin") setIsAdminPreview(true);
-        if (savedTheme === "dark" || savedTheme === "light") setTheme(savedTheme);
       }
     );
   }, []);
@@ -287,6 +282,9 @@ export default function Bartender() {
       {/* ── HEADER ── */}
       <View style={styles.header}>
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Pressable onPress={() => setDrawerOpen(true)} hitSlop={12}>
+            <Ionicons name="menu" size={24} color={C.textSub} />
+          </Pressable>
           {isAdminPreview && (
             <Pressable
               onPress={() => router.replace("/admin")}
@@ -298,9 +296,9 @@ export default function Bartender() {
           <Text style={styles.title}>{headerLabel}</Text>
           <View style={[styles.connDot, { backgroundColor: isConnected ? C.accent : C.danger }]} />
         </View>
-        <Pressable onPress={toggleTheme} style={styles.themeToggle} hitSlop={10}>
+        <Pressable onPress={() => setDarkMode(!darkMode)} style={styles.themeToggle} hitSlop={10}>
           <Ionicons
-            name={theme === "dark" ? "sunny-outline" : "moon-outline"}
+            name={darkMode ? "sunny-outline" : "moon-outline"}
             size={22}
             color={C.textSub}
           />
@@ -383,9 +381,19 @@ export default function Bartender() {
         />
       </Modal>
 
+      <SideDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        role={isAdminPreview ? "admin" : "bartender"}
+        placeId={placeId ?? ""}
+        sectors={sectors}
+        currentSectorIds={mySectorIds}
+        isAdminPreview={isAdminPreview}
+      />
+
       {/* ── AUDIO MODAL ── */}
       <Modal visible={showAudioModal} transparent animationType="fade">
-        <View style={[styles.modalOverlay, { backgroundColor: theme === "dark" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.45)" }]}>
+        <View style={[styles.modalOverlay, { backgroundColor: darkMode ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.45)" }]}>
           <View style={[styles.modalBox, { backgroundColor: C.surface, borderColor: C.border }]}>
             <View style={[styles.modalIcon, { backgroundColor: C.modalIconBg, borderColor: C.modalIconBorder }]}>
               <Ionicons name="volume-high" size={28} color={C.accent} />

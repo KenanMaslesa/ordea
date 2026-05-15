@@ -13,6 +13,7 @@ import {
     TextInput,
     View,
 } from "react-native";
+import { useTheme } from "./context/ThemeContext";
 import { getItem, setItem } from "./helper";
 import { getPlaceByJoinCode } from "./services/place.service";
 import { Place, Sector } from "./types/order.types";
@@ -21,6 +22,51 @@ type Step = "code" | "role" | "name";
 
 export default function JoinScreen() {
   const router = useRouter();
+  const { darkMode } = useTheme();
+
+  const D = darkMode ? {
+    wrapper: "#111827",
+    subtitle: "#9CA3AF",
+    codeInput: "#1F2937",
+    codeInputBorder: "#0E7C86",
+    codeInputText: "#E5E7EB",
+    input: "#1F2937",
+    inputBorder: "#374151",
+    inputText: "#E5E7EB",
+    placeholder: "#6B7280",
+    roleBtn: "#1F2937",
+    roleBtnBorder: "#374151",
+    roleName: "#F9FAFB",
+    roleDesc: "#9CA3AF",
+    dividerLine: "#374151",
+    dividerText: "#6B7280",
+    noSectorsBox: "#1C1400",
+    noSectorsBoxBorder: "#78350F",
+    noSectorsText: "#FCD34D",
+    adminLinkText: "#6B7280",
+    backText: "#22D3EE",
+  } : {
+    wrapper: "#F4F5F7",
+    subtitle: "#666",
+    codeInput: "#fff",
+    codeInputBorder: "#0E7C86",
+    codeInputText: "#18181B",
+    input: "#fff",
+    inputBorder: "#ddd",
+    inputText: "#18181B",
+    placeholder: "#A1A1AA",
+    roleBtn: "#fff",
+    roleBtnBorder: "#e0e0e0",
+    roleName: "#1a1a1a",
+    roleDesc: "#888",
+    dividerLine: "#ddd",
+    dividerText: "#aaa",
+    noSectorsBox: "#fff8e1",
+    noSectorsBoxBorder: "#ffe082",
+    noSectorsText: "#7a5c00",
+    adminLinkText: "#999",
+    backText: "#0E7C86",
+  };
 
   const [code, setCode] = useState("");
   const [step, setStep] = useState<Step>("code");
@@ -107,20 +153,21 @@ export default function JoinScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.wrapper}
+      style={[styles.wrapper, { backgroundColor: D.wrapper }]}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: D.wrapper }]} keyboardShouldPersistTaps="handled">
 
         {/* STEP 1 — Join code */}
         {step === "code" && (
           <>
             <Text style={styles.title}>Pridruži se</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: D.subtitle }]}>
               Unesite kod koji vam je dao administrator objekta.
             </Text>
             <TextInput
-              style={styles.codeInput}
+              style={[styles.codeInput, { backgroundColor: D.codeInput, borderColor: D.codeInputBorder, color: D.codeInputText }]}
               placeholder="npr. AB3X7K"
+              placeholderTextColor={D.placeholder}
               value={code}
               onChangeText={v => setCode(v.toUpperCase())}
               autoCapitalize="characters"
@@ -135,7 +182,7 @@ export default function JoinScreen() {
               <Text style={styles.btnText}>{loading ? "Provjera..." : "Nastavi"}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/login")} style={styles.adminLink}>
-              <Text style={styles.adminLinkText}>Admin prijava →</Text>
+              <Text style={[styles.adminLinkText, { color: D.adminLinkText }]}>Admin prijava →</Text>
             </Pressable>
           </>
         )}
@@ -144,22 +191,22 @@ export default function JoinScreen() {
         {step === "role" && (
           <>
             <Text style={styles.title}>{placeName}</Text>
-            <Text style={styles.subtitle}>Ko ste?</Text>
+            <Text style={[styles.subtitle, { color: D.subtitle }]}>Ko ste?</Text>
 
             {/* Konobar — always available */}
-            <Pressable style={styles.roleBtn} onPress={() => setStep("name")}>
+            <Pressable style={[styles.roleBtn, { backgroundColor: D.roleBtn, borderColor: D.roleBtnBorder }]} onPress={() => setStep("name")}>
               <Text style={styles.roleIcon}>🙋</Text>
-              <Text style={styles.roleName}>Konobar</Text>
-              <Text style={styles.roleDesc}>Kreiram narudžbe za stolove</Text>
+              <Text style={[styles.roleName, { color: D.roleName }]}>Konobar</Text>
+              <Text style={[styles.roleDesc, { color: D.roleDesc }]}>Kreiram narudžbe za stolove</Text>
             </Pressable>
 
             {/* Sectors — multi-select */}
             {placeSectors.length > 0 ? (
               <>
                 <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>ili — osoblje stanica</Text>
-                  <View style={styles.dividerLine} />
+                  <View style={[styles.dividerLine, { backgroundColor: D.dividerLine }]} />
+                  <Text style={[styles.dividerText, { color: D.dividerText }]}>ili — osoblje stanica</Text>
+                  <View style={[styles.dividerLine, { backgroundColor: D.dividerLine }]} />
                 </View>
 
                 {placeSectors.map(s => {
@@ -167,7 +214,7 @@ export default function JoinScreen() {
                   return (
                     <Pressable
                       key={s.id}
-                      style={[styles.roleBtn, active && styles.roleBtnActive]}
+                      style={[styles.roleBtn, { backgroundColor: D.roleBtn, borderColor: D.roleBtnBorder }, active && styles.roleBtnActive]}
                       onPress={() => toggleSector(s.id)}
                     >
                     <Ionicons
@@ -176,8 +223,8 @@ export default function JoinScreen() {
                         color={active ? "#fff" : "#0E7C86"}
                         style={{ marginBottom: 6 }}
                       />
-                      <Text style={[styles.roleName, active && { color: "#fff" }]}>{s.name}</Text>
-                      <Text style={[styles.roleDesc, active && { color: "#c8f0f3" }]}>
+                      <Text style={[styles.roleName, { color: D.roleName }, active && { color: "#fff" }]}>{s.name}</Text>
+                      <Text style={[styles.roleDesc, { color: D.roleDesc }, active && { color: "#c8f0f3" }]}>
                         {active ? "✓ Odabrano" : "Tap za odabir"}
                       </Text>
                     </Pressable>
@@ -195,15 +242,15 @@ export default function JoinScreen() {
                 </Pressable>
               </>
             ) : (
-              <View style={styles.noSectorsBox}>
-                <Text style={styles.noSectorsText}>
+              <View style={[styles.noSectorsBox, { backgroundColor: D.noSectorsBox, borderColor: D.noSectorsBoxBorder }]}>
+                <Text style={[styles.noSectorsText, { color: D.noSectorsText }]}>
                   ℹ️ Admin još nije postavio sektore.{"\n"}Ako radite na šanku ili kuhinji, kontaktirajte administratora.
                 </Text>
               </View>
             )}
 
             <Pressable onPress={() => setStep("code")} style={styles.backBtn}>
-              <Text style={styles.backText}>← Nazad</Text>
+              <Text style={[styles.backText, { color: D.backText }]}>← Nazad</Text>
             </Pressable>
           </>
         )}
@@ -212,10 +259,11 @@ export default function JoinScreen() {
         {step === "name" && (
           <>
             <Text style={styles.title}>Vaše ime</Text>
-            <Text style={styles.subtitle}>Ovo ime će se prikazivati na narudžbama.</Text>
+            <Text style={[styles.subtitle, { color: D.subtitle }]}>Ovo ime će se prikazivati na narudžbama.</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
               placeholder="npr. Amina"
+              placeholderTextColor={D.placeholder}
               value={name}
               onChangeText={setName}
               autoFocus
@@ -228,7 +276,7 @@ export default function JoinScreen() {
               <Text style={styles.btnText}>{loading ? "..." : "Počni raditi"}</Text>
             </Pressable>
             <Pressable onPress={() => setStep("role")} style={styles.backBtn}>
-              <Text style={styles.backText}>← Nazad</Text>
+              <Text style={[styles.backText, { color: D.backText }]}>← Nazad</Text>
             </Pressable>
           </>
         )}

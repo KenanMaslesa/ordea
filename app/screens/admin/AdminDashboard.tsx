@@ -1,6 +1,5 @@
 import { db, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -13,7 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { setItem } from "../../helper";
+import { useTheme } from "../../context/ThemeContext";
 import {
   aggregateStats,
   getDayKeys,
@@ -25,7 +24,7 @@ import { DayStats } from "../../types/stats.types";
 const TEAL = "#0E7C86";
 const { width: SW } = Dimensions.get("window");
 
-interface Props { placeId: string }
+interface Props { placeId: string; onMenuPress?: () => void }
 type Period = "today" | "week" | "month";
 
 /* ─────────── helpers ─────────── */
@@ -42,9 +41,10 @@ function pctDiff(curr: number, prev: number): number | null {
 
 /* ─────────── mini components ─────────── */
 function MiniBar({ value, max, color = TEAL }: { value: number; max: number; color?: string }) {
+  const { darkMode } = useTheme();
   const pct = max > 0 ? Math.max(value / max, 0.02) : 0;
   return (
-    <View style={{ height: 5, backgroundColor: "#f0f0f0", borderRadius: 3, marginTop: 4 }}>
+    <View style={{ height: 5, backgroundColor: darkMode ? "#374151" : "#f0f0f0", borderRadius: 3, marginTop: 4 }}>
       <View style={{ width: `${pct * 100}%`, height: "100%", backgroundColor: color, borderRadius: 3 }} />
     </View>
   );
@@ -64,28 +64,32 @@ function DiffBadge({ pct }: { pct: number | null }) {
 }
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
+  const { darkMode } = useTheme();
   return (
     <View style={{ marginTop: 20, marginBottom: 8, flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {sub ? <Text style={{ fontSize: 11, color: "#aaa" }}>{sub}</Text> : null}
+      <Text style={[styles.sectionTitle, { color: darkMode ? "#9CA3AF" : "#888" }]}>{title}</Text>
+      {sub ? <Text style={{ fontSize: 11, color: darkMode ? "#6B7280" : "#aaa" }}>{sub}</Text> : null}
     </View>
   );
 }
 
 function EmptyCard({ label }: { label: string }) {
+  const { darkMode } = useTheme();
   return (
-    <View style={[styles.card, { alignItems: "center", paddingVertical: 24 }]}>
-      <Text style={{ color: "#ccc", fontSize: 13 }}>{label}</Text>
+    <View style={[styles.card, { backgroundColor: darkMode ? "#1F2937" : "#fff", borderColor: darkMode ? "#374151" : "#eee", alignItems: "center", paddingVertical: 24 }]}>
+      <Text style={{ color: darkMode ? "#4B5563" : "#ccc", fontSize: 13 }}>{label}</Text>
     </View>
   );
 }
 
 /* ─────────── HOURLY HEATMAP ─────────── */
 function HourlyHeatmap({ data }: { data: Record<string, number> }) {
+  const { darkMode } = useTheme();
+  const labelColor = darkMode ? "#6B7280" : "#aaa";
   const max = Math.max(...Object.values(data).map(Number), 1);
   const cellW = Math.floor((SW - 64) / 24) - 2;
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: darkMode ? "#1F2937" : "#fff", borderColor: darkMode ? "#374151" : "#eee" }]}>
       <View style={{ flexDirection: "row", gap: 2, flexWrap: "nowrap" }}>
         {Array.from({ length: 24 }, (_, h) => {
           const count = Number(data[h.toString()] ?? 0);
@@ -94,15 +98,15 @@ function HourlyHeatmap({ data }: { data: Record<string, number> }) {
             <View key={h} style={{ alignItems: "center", width: cellW }}>
               <View style={{ width: cellW, height: 32, backgroundColor: `rgba(14,124,134,${alpha.toFixed(2)})`, borderRadius: 3 }} />
               {h % 4 === 0 && (
-                <Text style={{ fontSize: 8, color: "#aaa", marginTop: 2 }}>{h}h</Text>
+                <Text style={{ fontSize: 8, color: labelColor, marginTop: 2 }}>{h}h</Text>
               )}
             </View>
           );
         })}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-        <Text style={{ fontSize: 10, color: "#aaa" }}>Manje gužve</Text>
-        <Text style={{ fontSize: 10, color: "#aaa" }}>Više gužve</Text>
+        <Text style={{ fontSize: 10, color: labelColor }}>Manje gužve</Text>
+        <Text style={{ fontSize: 10, color: labelColor }}>Više gužve</Text>
       </View>
     </View>
   );
@@ -110,21 +114,22 @@ function HourlyHeatmap({ data }: { data: Record<string, number> }) {
 
 /* ─────────── TREND CHART (per day) ─────────── */
 function TrendChart({ daily }: { daily: DayStats[] }) {
+  const { darkMode } = useTheme();
   if (daily.length < 2) return null;
   const max = Math.max(...daily.map(d => d.revenue ?? 0), 1);
   const barW = Math.floor((SW - 64) / daily.length) - 3;
-  const ordered = [...daily].reverse(); // oldest first
+  const ordered = [...daily].reverse();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: darkMode ? "#1F2937" : "#fff", borderColor: darkMode ? "#374151" : "#eee" }]}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 64 }}>
         {ordered.map(d => {
           const h = Math.max((d.revenue / max) * 60, 3);
-          const label = d.dayKey.slice(5); // MM-DD
+          const label = d.dayKey.slice(5);
           return (
             <View key={d.dayKey} style={{ alignItems: "center", width: barW }}>
               <View style={{ width: barW, height: h, backgroundColor: TEAL, borderRadius: 3, opacity: 0.85 }} />
               {ordered.length <= 14 && (
-                <Text style={{ fontSize: 7, color: "#aaa", marginTop: 2 }}>{label}</Text>
+                <Text style={{ fontSize: 7, color: darkMode ? "#6B7280" : "#aaa", marginTop: 2 }}>{label}</Text>
               )}
             </View>
           );
@@ -135,19 +140,72 @@ function TrendChart({ daily }: { daily: DayStats[] }) {
 }
 
 /* ═══════════════════════════════════════════════ MAIN ═══════════════════════════════════════════════ */
-export default function AdminDashboard({ placeId }: Props) {
-  const router = useRouter();
+export default function AdminDashboard({ placeId, onMenuPress }: Props) {
+  const { darkMode } = useTheme();
+
+  const D = darkMode ? {
+    root: "#111827",
+    header: "#1F2937",
+    headerBorder: "#374151",
+    headerTitle: "#F9FAFB",
+    hamburgerBox: "#374151",
+    periodRow: "#1F2937",
+    periodBorder: "#374151",
+    periodText: "#9CA3AF",
+    periodBtnBorder: "#4B5563",
+    card: "#1F2937",
+    cardBorder: "#374151",
+    rowBorder: "#374151",
+    rowName: "#E5E7EB",
+    rank: "#6B7280",
+    sub: "#6B7280",
+    kpiCard: "#1F2937",
+    kpiCardBorder: "#374151",
+    kpiLabel: "#6B7280",
+    analyticsText: "#9CA3AF",
+    emptyIcon: "#374151",
+    emptyTitle: "#6B7280",
+    emptySubtitle: "#4B5563",
+  } : {
+    root: "#f4f5f7",
+    header: "#fff",
+    headerBorder: "#F0F0F0",
+    headerTitle: "#18181B",
+    hamburgerBox: "#F0FDFA",
+    periodRow: "#fff",
+    periodBorder: "#eee",
+    periodText: "#666",
+    periodBtnBorder: "#ddd",
+    card: "#fff",
+    cardBorder: "#eee",
+    rowBorder: "#f5f5f5",
+    rowName: "#222",
+    rank: "#ccc",
+    sub: "#aaa",
+    kpiCard: "#fff",
+    kpiCardBorder: "#eee",
+    kpiLabel: "#aaa",
+    analyticsText: "#555",
+    emptyIcon: "#ddd",
+    emptyTitle: "#bbb",
+    emptySubtitle: "#ccc",
+  };
+
   const [period, setPeriod] = useState<Period>("today");
   const [stats, setStats] = useState<DayStats | null>(null);
   const [prevStats, setPrevStats] = useState<DayStats | null>(null);
   const [dailyStats, setDailyStats] = useState<DayStats[]>([]);
   const [loading, setLoading] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
+  const [placeName, setPlaceName] = useState("");
 
   useEffect(() => {
     if (!placeId) return;
     const unsub = onSnapshot(doc(db, placesRoot(), placeId), d => {
-      if (d.exists()) setSectors((d.data().sectors as Sector[]) ?? []);
+      if (d.exists()) {
+        setSectors((d.data().sectors as Sector[]) ?? []);
+        setPlaceName(d.data().name ?? "");
+      }
     });
     return unsub;
   }, [placeId]);
@@ -210,31 +268,23 @@ export default function AdminDashboard({ placeId }: Props) {
   const periodLabel = period === "today" ? "jučer" : period === "week" ? "prošlih 7 dana" : "prošlih 30 dana";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f4f5f7" }}>
-      {/* ── PREVIEW BAR ── */}
-      <View style={styles.previewBar}>
-        <Text style={styles.previewLabel}>Pregled kao:</Text>
-        <Pressable onPress={() => router.push("/waiter")} style={styles.previewBtn}>
-          <Ionicons name="person-outline" size={14} color={TEAL} />
-          <Text style={styles.previewBtnText}>Konobar</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: D.root }}>
+      {/* ── HEADER ── */}
+      <View style={[styles.header, { backgroundColor: D.header, borderBottomColor: D.headerBorder }]}>
+        <Pressable onPress={onMenuPress} hitSlop={12} style={styles.headerHamburger}>
+          <View style={[styles.hamburgerBox, { backgroundColor: D.hamburgerBox }]}>
+            <Ionicons name="menu" size={20} color={TEAL} />
+          </View>
         </Pressable>
-        {sectors.map(s => (
-          <Pressable
-            key={s.id}
-            onPress={async () => { await setItem("@sectorIds", JSON.stringify([s.id])); router.push("/bartender"); }}
-            style={styles.previewBtn}
-          >
-            <Ionicons name={(s.icon as any) || "storefront-outline"} size={14} color={TEAL} />
-            <Text style={styles.previewBtnText}>{s.name}</Text>
-          </Pressable>
-        ))}
+        <Text style={[styles.headerTitle, { color: D.headerTitle }]} numberOfLines={1}>{placeName || "Dashboard"}</Text>
+        <View style={{ width: 44 }} />
       </View>
 
       {/* ── PERIOD TABS ── */}
-      <View style={styles.periodRow}>
+      <View style={[styles.periodRow, { backgroundColor: D.periodRow, borderColor: D.periodBorder }]}>
         {(["today", "week", "month"] as Period[]).map(p => (
-          <Pressable key={p} onPress={() => setPeriod(p)} style={[styles.periodBtn, period === p && styles.periodBtnActive]}>
-            <Text style={[styles.periodText, period === p && styles.periodTextActive]}>
+          <Pressable key={p} onPress={() => setPeriod(p)} style={[styles.periodBtn, { borderColor: period === p ? TEAL : D.periodBtnBorder }, period === p && styles.periodBtnActive]}>
+            <Text style={[styles.periodText, { color: period === p ? "#fff" : D.periodText }]}>
               {p === "today" ? "Danas" : p === "week" ? "7 dana" : "30 dana"}
             </Text>
           </Pressable>
@@ -255,43 +305,43 @@ export default function AdminDashboard({ placeId }: Props) {
             <Text style={[styles.kpiLabel, { color: "rgba(255,255,255,0.7)" }]}>KM prihod</Text>
             {revDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={revDiff} /></View>}
           </View>
-          <View style={styles.kpiCard}>
+          <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
             <Text style={[styles.kpiValue, { color: TEAL }]}>{stats?.ordersCount ?? 0}</Text>
-            <Text style={styles.kpiLabel}>Narudžbi</Text>
+            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Narudžbi</Text>
             {ordersDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={ordersDiff} /></View>}
           </View>
-          <View style={styles.kpiCard}>
+          <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
             <Text style={[styles.kpiValue, { color: TEAL }]}>
               {stats && stats.ordersCount > 0 ? (stats.revenue / stats.ordersCount).toFixed(2) : "—"}
             </Text>
-            <Text style={styles.kpiLabel}>Pros. KM</Text>
+            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Pros. KM</Text>
           </View>
         </View>
         <View style={styles.kpiRow}>
           {avgCompletion && (
-            <View style={styles.kpiCard}>
+            <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
               <Text style={[styles.kpiValue, { color: TEAL, fontSize: 16 }]}>{avgCompletion}</Text>
-              <Text style={styles.kpiLabel}>Pros. izrada</Text>
+              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Pros. izrada</Text>
             </View>
           )}
           {cancellationRate !== null && Number(cancellationRate) > 0 && (
-            <View style={[styles.kpiCard, { borderColor: "#fee2e2" }]}>
+            <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: darkMode ? "#7F1D1D" : "#fee2e2" }]}>
               <Text style={[styles.kpiValue, { color: "#ef4444" }]}>{cancellationRate}%</Text>
-              <Text style={styles.kpiLabel}>Otkazano</Text>
+              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Otkazano</Text>
             </View>
           )}
           {stats?.cancelledCount ? (
-            <View style={[styles.kpiCard, { borderColor: "#fef9c3" }]}>
+            <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: darkMode ? "#78350F" : "#fef9c3" }]}>
               <Text style={[styles.kpiValue, { color: "#ca8a04", fontSize: 18 }]}>{stats.cancelledCount}</Text>
-              <Text style={styles.kpiLabel}>Otkazane</Text>
+              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Otkazane</Text>
             </View>
           ) : null}
         </View>
 
         {revDiff !== null && (
-          <View style={[styles.card, { flexDirection: "row", alignItems: "center", gap: 8, padding: 12 }]}>
+          <View style={[styles.card, { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, backgroundColor: D.card, borderColor: D.cardBorder }]}>
             <Ionicons name="analytics-outline" size={18} color={TEAL} />
-            <Text style={{ fontSize: 12, color: "#555", flex: 1 }}>
+            <Text style={{ fontSize: 12, color: D.analyticsText, flex: 1 }}>
               Prihod {revDiff !== null && revDiff >= 0 ? "veći" : "manji"} za{" "}
               <Text style={{ fontWeight: "700" }}>{Math.abs(revDiff ?? 0)}%</Text> u odnosu na {periodLabel}
             </Text>
@@ -316,13 +366,13 @@ export default function AdminDashboard({ placeId }: Props) {
         {/* ── TOP ITEMS ── */}
         <SectionTitle title="Top artikli" sub="po količini" />
         {topItems.length > 0 ? (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topItems.map(([name, qty], i) => (
-              <View key={name} style={[styles.row, i < topItems.length - 1 && styles.rowBorder]}>
-                <Text style={styles.rank}>{i + 1}.</Text>
+              <View key={name} style={[styles.row, i < topItems.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
+                <Text style={[styles.rank, { color: D.rank }]}>{i + 1}.</Text>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={styles.rowName} numberOfLines={1}>{name}</Text>
+                    <Text style={[styles.rowName, { color: D.rowName }]} numberOfLines={1}>{name}</Text>
                     <Text style={styles.rowVal}>{qty}×</Text>
                   </View>
                   <MiniBar value={qty} max={maxItem} />
@@ -335,17 +385,17 @@ export default function AdminDashboard({ placeId }: Props) {
         {/* ── KATEGORIJE ── */}
         <SectionTitle title="Prihod po kategorijama" />
         {topCategories.length > 0 ? (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topCategories.map(([cat, rev], i) => {
               const count = stats?.categoryOrderCount?.[cat] ?? 0;
               return (
-                <View key={cat} style={[styles.row, i < topCategories.length - 1 && styles.rowBorder]}>
+                <View key={cat} style={[styles.row, i < topCategories.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <Text style={styles.rowName}>{cat}</Text>
+                      <Text style={[styles.rowName, { color: D.rowName }]}>{cat}</Text>
                       <View style={{ alignItems: "flex-end" }}>
                         <Text style={styles.rowVal}>{rev.toFixed(2)} KM</Text>
-                        <Text style={{ fontSize: 10, color: "#aaa" }}>{count} kom</Text>
+                        <Text style={{ fontSize: 10, color: D.sub }}>{count} kom</Text>
                       </View>
                     </View>
                     <MiniBar value={rev} max={maxCat} />
@@ -359,25 +409,25 @@ export default function AdminDashboard({ placeId }: Props) {
         {/* ── KONOBARI ── */}
         <SectionTitle title="Konobari" sub="rang lista" />
         {topWaiters.length > 0 ? (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topWaiters.map(([name, rev], i) => {
               const orders = stats?.waiterOrderCount?.[name] ?? 0;
               const totalMs = stats?.waiterTotalCompletionMs?.[name] ?? 0;
               const avgMs = orders > 0 ? totalMs / orders : 0;
               const avgVal = orders > 0 ? (rev / orders).toFixed(2) : "—";
               return (
-                <View key={name} style={[styles.row, i < topWaiters.length - 1 && styles.rowBorder]}>
-                  <Text style={styles.rank}>{i + 1}.</Text>
+                <View key={name} style={[styles.row, i < topWaiters.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
+                  <Text style={[styles.rank, { color: D.rank }]}>{i + 1}.</Text>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                      <Text style={styles.rowName}>{name}</Text>
+                      <Text style={[styles.rowName, { color: D.rowName }]}>{name}</Text>
                       <Text style={[styles.rowVal, { fontSize: 15 }]}>{rev.toFixed(2)} KM</Text>
                     </View>
                     <MiniBar value={rev} max={maxWaiter} />
                     <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
-                      <Text style={styles.sub}>{orders} narudžbi</Text>
-                      <Text style={styles.sub}>Pros. {avgVal} KM</Text>
-                      {avgMs > 0 && <Text style={styles.sub}>⏱ {fmtMs(avgMs)}</Text>}
+                      <Text style={[styles.sub, { color: D.sub }]}>{orders} narudžbi</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>Pros. {avgVal} KM</Text>
+                      {avgMs > 0 && <Text style={[styles.sub, { color: D.sub }]}>⏱ {fmtMs(avgMs)}</Text>}
                     </View>
                   </View>
                 </View>
@@ -390,19 +440,19 @@ export default function AdminDashboard({ placeId }: Props) {
         {topRegions.length > 0 && (
           <>
             <SectionTitle title="Zone / Regije" sub="po prihodu" />
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
               {topRegions.map(([region, rev], i) => {
                 const count = stats?.regionOrderCount?.[region] ?? 0;
                 return (
-                  <View key={region} style={[styles.row, i < topRegions.length - 1 && styles.rowBorder]}>
-                    <Ionicons name="location-outline" size={14} color="#aaa" style={{ marginTop: 2 }} />
+                  <View key={region} style={[styles.row, i < topRegions.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
+                    <Ionicons name="location-outline" size={14} color={D.sub} style={{ marginTop: 2 }} />
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                        <Text style={styles.rowName}>{region}</Text>
+                        <Text style={[styles.rowName, { color: D.rowName }]}>{region}</Text>
                         <Text style={styles.rowVal}>{rev.toFixed(2)} KM</Text>
                       </View>
                       <MiniBar value={rev} max={maxRegion} />
-                      <Text style={styles.sub}>{count} narudžbi</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudžbi</Text>
                     </View>
                   </View>
                 );
@@ -415,25 +465,25 @@ export default function AdminDashboard({ placeId }: Props) {
         {sectorEntries.length > 0 && (
           <>
             <SectionTitle title="Sektori" sub="prosječno vrijeme izrade" />
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
               {sectorEntries.map(([sectorId, count], i) => {
                 const totalMs = stats?.sectorTotalCompletionMs?.[sectorId] ?? 0;
                 const completed = stats?.sectorCompletedCount?.[sectorId] ?? 0;
                 const avgMs = completed > 0 ? totalMs / completed : 0;
                 const name = sectorMap[sectorId] ?? sectorId;
                 return (
-                  <View key={sectorId} style={[styles.row, i < sectorEntries.length - 1 && styles.rowBorder]}>
-                    <Ionicons name="storefront-outline" size={15} color="#aaa" />
+                  <View key={sectorId} style={[styles.row, i < sectorEntries.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
+                    <Ionicons name="storefront-outline" size={15} color={D.sub} />
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                        <Text style={styles.rowName}>{name}</Text>
+                        <Text style={[styles.rowName, { color: D.rowName }]}>{name}</Text>
                         {avgMs > 0 && (
                           <Text style={[styles.rowVal, { color: avgMs > 5 * 60_000 ? "#ef4444" : TEAL }]}>
                             ⏱ {fmtMs(avgMs)}
                           </Text>
                         )}
                       </View>
-                      <Text style={styles.sub}>{count} narudžbi obrađeno</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudžbi obrađeno</Text>
                     </View>
                   </View>
                 );
@@ -444,9 +494,9 @@ export default function AdminDashboard({ placeId }: Props) {
 
         {!stats?.ordersCount && !loading && (
           <View style={{ alignItems: "center", marginTop: 32 }}>
-            <Ionicons name="bar-chart-outline" size={48} color="#ddd" />
-            <Text style={{ color: "#bbb", marginTop: 8, fontSize: 14 }}>Nema završenih narudžbi za ovaj period</Text>
-            <Text style={{ color: "#ccc", fontSize: 12, marginTop: 4 }}>Statistika se puni automatski kako narudžbe budu završene</Text>
+            <Ionicons name="bar-chart-outline" size={48} color={D.emptyIcon} />
+            <Text style={{ color: D.emptyTitle, marginTop: 8, fontSize: 14 }}>Nema završenih narudžbi za ovaj period</Text>
+            <Text style={{ color: D.emptySubtitle, fontSize: 12, marginTop: 4 }}>Statistika se puni automatski kako narudžbe budu završene</Text>
           </View>
         )}
       </ScrollView>
@@ -456,18 +506,24 @@ export default function AdminDashboard({ placeId }: Props) {
 
 /* ─────────── STYLES ─────────── */
 const styles = StyleSheet.create({
-  previewBar: {
-    flexDirection: "row", alignItems: "center", flexWrap: "wrap",
-    gap: 8, paddingHorizontal: 12, paddingVertical: 8,
-    backgroundColor: "#e8f8f9", borderBottomWidth: 1, borderColor: "#b2dfdf",
+  header: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#fff",
+    paddingHorizontal: 8, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: "#F0F0F0",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06, shadowRadius: 4, elevation: 3,
   },
-  previewLabel: { fontSize: 12, fontWeight: "700", color: TEAL },
-  previewBtn: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "#fff", borderRadius: 16, borderWidth: 1,
-    borderColor: TEAL, paddingHorizontal: 10, paddingVertical: 5,
+  headerHamburger: { padding: 6 },
+  hamburgerBox: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: "#F0FDFA",
+    alignItems: "center", justifyContent: "center",
   },
-  previewBtnText: { fontSize: 12, fontWeight: "600", color: TEAL },
+  headerTitle: {
+    flex: 1, textAlign: "center",
+    fontSize: 16, fontWeight: "700", color: "#18181B", letterSpacing: -0.3,
+  },
   periodRow: {
     flexDirection: "row", padding: 12, gap: 8, backgroundColor: "#fff",
     borderBottomWidth: 1, borderColor: "#eee", alignItems: "center",

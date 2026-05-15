@@ -6,9 +6,9 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import NetInfo from "@react-native-community/netinfo";
 import * as Device from "expo-device";
-import { useNavigation, useRouter } from "expo-router";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { collection, doc, getDocsFromServer, onSnapshot, orderBy, query } from "firebase/firestore";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+import SideDrawer from "./components/SideDrawer";
+import { useTheme } from "./context/ThemeContext";
 import { getItem, setItem } from "./helper";
 import useAuth from "./hooks/useAuth";
 import { useMyOrders } from "./hooks/useMyOrders";
@@ -120,6 +122,10 @@ export default function WaiterScreen() {
   const [showZoneSheet, setShowZoneSheet] = useState(false);
   const [showOrdersSheet, setShowOrdersSheet] = useState(false);
   const [placeSectors, setPlaceSectors] = useState<Sector[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [headerTheme, setHeaderTheme] = useState<"teal" | "white">("white");
+  const [sheetTheme, setSheetTheme] = useState<"teal" | "white">("white");
+  const { darkMode } = useTheme();
 
   const [waiterName, setWaiterName] = useState("");
   const [deviceId, setDeviceId] = useState("");
@@ -262,102 +268,119 @@ export default function WaiterScreen() {
       } else {
         const role = await getItem("@role");
         if (role === "admin") {
-          setWaiterName("Admin");
+          // Admin uses their own name set in the drawer (@adminName)
+          const adminName = await getItem("@adminName");
+          setWaiterName(adminName || "Admin");
         } else {
           setShowNameModal(true);
         }
       }
+
+      const h = await getItem("@waiterHeaderTheme");
+      const s = await getItem("@waiterSheetTheme");
+      if (h === "teal" || h === "white") setHeaderTheme(h);
+      if (s === "teal" || s === "white") setSheetTheme(s);
     })();
 
     setLoading(false);
   }, []);
 
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      const h = await getItem("@waiterHeaderTheme");
+      const s = await getItem("@waiterSheetTheme");
+      if (h === "teal" || h === "white") setHeaderTheme(h);
+      if (s === "teal" || s === "white") setSheetTheme(s);
+    })();
+  }, []));
+
   // --- Update header ---
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <Pressable
-          onPress={() => setShowNameModal(true)}
-          style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-          hitSlop={10}
-        >
-          <Ionicons name="person-circle-outline" size={26} color="rgba(255,255,255,0.9)" />
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17 }}>
+        <Pressable onPress={() => setShowNameModal(true)} hitSlop={10}>
+          <Text style={{ color: headerTheme === "teal" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B", fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>
             {waiterName || "Postavi ime"}
           </Text>
         </Pressable>
       ),
-      // headerTitleAlign: "center",
-      headerLeft: isAdminPreview ? () => (
-        <Pressable onPress={() => router.replace("/admin")} style={{ paddingLeft: 8 }}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+      headerTitleAlign: "center",
+      headerLeft: () => (
+        <Pressable onPress={() => setDrawerOpen(true)} style={{ paddingLeft: 8 }} hitSlop={10}>
+          <View style={{
+            width: 36, height: 36, borderRadius: 10,
+            backgroundColor: headerTheme === "teal" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : "#F0FDFA",
+            alignItems: "center", justifyContent: "center",
+          }}>
+            <Ionicons name="menu" size={20} color={headerTheme === "teal" ? "#fff" : darkMode ? "#E5E7EB" : "#0E7C86"} />
+          </View>
         </Pressable>
-      ) : () => null,
+      ),
       headerRight: () => {
         const last25h = Date.now() - 25 * 60 * 60 * 1000;
         const doneCount = myOrders.filter(o => o.status === "done" && (o.finishedAt ?? o.createdAt) >= last25h).length
         const pendingCount = myOrders.filter(o => o.status === "pending").length
       
         return (
-          <Pressable
-            onPress={() => setShowOrdersSheet(true)}
-            style={{ padding: 16 }}
-          >
-            <View style={{ position: "relative" }}>
-              {/* Ikonica */}
-              <Text style={{ color: "white", fontSize: 20 }}>📃</Text>
-      
-              {/* CRVENI – NA ČEKANJU */}
-              {pendingCount > 0 && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -6,
-                    left: -10,
-                    minWidth: 18,
-                    height: 18,
-                    borderRadius: 9,
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 8 }}>
+            {/* Orders */}
+            <Pressable onPress={() => setShowOrdersSheet(true)} hitSlop={10}>
+              <View style={{
+                width: 36, height: 36, borderRadius: 10,
+                backgroundColor: headerTheme === "teal" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : "#F0FDFA",
+                alignItems: "center", justifyContent: "center",
+              }}>
+                <Ionicons name="receipt-outline" size={20} color={headerTheme === "teal" ? "#fff" : darkMode ? "#E5E7EB" : "#0E7C86"} />
+                {pendingCount > 0 && (
+                  <View style={{
+                    position: "absolute", top: -4, right: -4,
+                    minWidth: 16, height: 16, borderRadius: 8,
                     backgroundColor: "#ef4444",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingHorizontal: 4,
-                  }}
-                >
-                  <Text style={{ color: "white", fontSize: 11, fontWeight: "bold" }}>
-                    {pendingCount}
-                  </Text>
-                </View>
-              )}
-      
-              {/* ZELENI – ZAVRŠENE */}
-              {doneCount > 0 && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -6,
-                    right: -10,
-                    minWidth: 18,
-                    height: 18,
-                    borderRadius: 9,
+                    alignItems: "center", justifyContent: "center",
+                    paddingHorizontal: 3,
+                  }}>
+                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>{pendingCount}</Text>
+                  </View>
+                )}
+                {doneCount > 0 && (
+                  <View style={{
+                    position: "absolute", top: -4, left: -4,
+                    minWidth: 16, height: 16, borderRadius: 8,
                     backgroundColor: "#22c55e",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingHorizontal: 4,
-                  }}
-                >
-                  <Text style={{ color: "white", fontSize: 11, fontWeight: "bold" }}>
-                    {doneCount}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </Pressable>
+                    alignItems: "center", justifyContent: "center",
+                    paddingHorizontal: 3,
+                  }}>
+                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>{doneCount}</Text>
+                  </View>
+                )}
+              </View>
+            </Pressable>
+
+            {/* Settings */}
+            <Pressable onPress={() => router.push("/waiter-settings")} hitSlop={10}>
+              <View style={{
+                width: 36, height: 36, borderRadius: 10,
+                backgroundColor: headerTheme === "teal" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : "#F0FDFA",
+                alignItems: "center", justifyContent: "center",
+              }}>
+                <Ionicons name="settings-outline" size={20} color={headerTheme === "teal" ? "#fff" : darkMode ? "#E5E7EB" : "#0E7C86"} />
+              </View>
+            </Pressable>
+          </View>
         )
       },
-      headerStyle: { backgroundColor: "#0E7C86" },
-      headerTintColor: "#fff",
+      headerStyle: {
+        backgroundColor: headerTheme === "teal" ? "#0E7C86" : darkMode ? "#1F2937" : "#fff",
+        shadowColor: headerTheme === "teal" ? "#0E7C86" : "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+      headerShadowVisible: !darkMode && headerTheme !== "teal",
+      headerTintColor: headerTheme === "teal" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B",
     });
-  }, [navigation, waiterName, myOrders]);
+  }, [navigation, waiterName, myOrders, headerTheme, darkMode]);
 
   // --- Badge animation ---
   const animateBadge = (id: string) => {
@@ -380,7 +403,7 @@ export default function WaiterScreen() {
 
   const addItem = (item: DynItem, categoryName: string) => {
     if (!waiterName) {
-      if (isAdminPreview) { setWaiterName("Admin"); }
+      if (isAdminPreview) { /* name already set from @adminName */ }
       else { setShowNameModal(true); return; }
     }
     haptic.light();
@@ -524,8 +547,94 @@ export default function WaiterScreen() {
 
   if (loading) return <ActivityIndicator size={"large"} style={{ flex: 1 }} />;
 
+  // --- Sheet color tokens based on sheetTheme ---
+  const SC = sheetTheme === "teal" ? {
+    bg: "#0E7C86",
+    handle: "#fff",
+    headerBg: "#0E7C86",
+    headerBorder: "rgba(255,255,255,0.2)" as const,
+    title: "#fff",
+    rowBorder: "rgba(255,255,255,0.15)" as const,
+    cat: "#cce8eb",
+    name: "#fff",
+    qty: "#fff",
+    price: "#fff",
+    qtyBtnBg: "#fff",
+    qtyBtnBorder: "transparent" as const,
+    qtyBtnText: "#0E7C86",
+    totalText: "#fff",
+    btnBg: "#fff",
+    btnText: "#0E7C86",
+    noteBg: "rgba(255,255,255,0.15)" as const,
+    noteText: "#fff",
+    noteBorder: "rgba(255,255,255,0.3)" as const,
+    notePlaceholder: "rgba(255,255,255,0.5)" as const,
+    shadow: "#0E7C86",
+    zoneBg: "rgba(255,255,255,0.2)" as const,
+    zoneText: "#fff",
+  } : darkMode ? {
+    bg: "#1F2937",
+    handle: "#6B7280",
+    headerBg: "#374151",
+    headerBorder: "#4B5563" as const,
+    title: "#F9FAFB",
+    rowBorder: "#374151" as const,
+    cat: "#9CA3AF",
+    name: "#F9FAFB",
+    qty: "#F9FAFB",
+    price: "#F9FAFB",
+    qtyBtnBg: "#374151",
+    qtyBtnBorder: "#4B5563" as const,
+    qtyBtnText: "#0E7C86",
+    totalText: "#F9FAFB",
+    btnBg: "#0E7C86",
+    btnText: "#fff",
+    noteBg: "#374151" as const,
+    noteText: "#F9FAFB",
+    noteBorder: "#4B5563" as const,
+    notePlaceholder: "#6B7280" as const,
+    shadow: "#000",
+    zoneBg: "#374151" as const,
+    zoneText: "#0E7C86",
+  } : {
+    bg: "#fff",
+    handle: "#0E7C86",
+    headerBg: "#F0FDFA",
+    headerBorder: "#E4E4E7" as const,
+    title: "#0E7C86",
+    rowBorder: "#F4F4F5" as const,
+    cat: "#71717A",
+    name: "#18181B",
+    qty: "#18181B",
+    price: "#18181B",
+    qtyBtnBg: "#F0FDFA",
+    qtyBtnBorder: "#99E6EC" as const,
+    qtyBtnText: "#0E7C86",
+    totalText: "#18181B",
+    btnBg: "#0E7C86",
+    btnText: "#fff",
+    noteBg: "#FAFAFA" as const,
+    noteText: "#18181B",
+    noteBorder: "#E4E4E7" as const,
+    notePlaceholder: "#aaa" as const,
+    shadow: "#0E7C86",
+    zoneBg: "#fff" as const,
+    zoneText: "#0E7C86",
+  };
+
+  // --- Dark mode tokens ---
+  const DM = {
+    catBar:    darkMode ? "#1F2937" : "#fff",
+    catBorder: darkMode ? "#374151" : "#eee",
+    catText:   darkMode ? "#E5E7EB" : "#000",
+    subTitle:  darkMode ? "#F3F4F6" : "#18181B",
+    cardBg:    darkMode ? "#1F2937" : "#fff",
+    cardText:  darkMode ? "#F9FAFB" : "#18181B",
+    badgeBg:   darkMode ? "#374151" : "#fff",
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#F4F5F7" }}>
+    <View style={{ flex: 1, backgroundColor: darkMode ? "#111827" : "#F4F5F7" }}>
       {/* Offline / flushing banner */}
       {!isConnected && (
         <View style={{
@@ -559,7 +668,7 @@ export default function WaiterScreen() {
       )}
 
       {/* Sticky Header */}
-      <View style={styles.categories}>
+      <View style={[styles.categories, { backgroundColor: DM.catBar }]}>
         <FlatList
           ref={flatListStickyCategoryRef}
           horizontal
@@ -578,12 +687,12 @@ export default function WaiterScreen() {
                     <Ionicons
                       name={item.emoji as keyof typeof Ionicons.glyphMap}
                       size={14}
-                      color={active ? "#fff" : "#000"}
+                      color={active ? "#fff" : DM.catText}
                     />
                   ) : item.emoji ? (
-                    <Text style={{ color: active ? "#fff" : "#000" }}>{item.emoji}</Text>
+                    <Text style={{ color: active ? "#fff" : DM.catText }}>{item.emoji}</Text>
                   ) : null}
-                  <Text style={{ color: active ? "#fff" : "#000", fontWeight: active ? "800" : "600" }}>
+                  <Text style={{ color: active ? "#fff" : DM.catText, fontWeight: active ? "800" : "600" }}>
                     {item.name}
                   </Text>
                 </View>
@@ -592,8 +701,7 @@ export default function WaiterScreen() {
           }}
         />
       </View>
-
-      {/* Menu items */}
+      <View style={{ height: 1, backgroundColor: DM.catBorder }} />
       {dynamicMenu.length === 0 ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#0E7C86" />
@@ -606,9 +714,10 @@ export default function WaiterScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={onHorizontalScroll} // ili onMomentumScrollEnd
+        onScroll={onHorizontalScroll}
         scrollEventThrottle={16}
         nestedScrollEnabled
+        style={{ backgroundColor: "transparent" }}
         getItemLayout={(_, index) => ({
           length: width,
           offset: width * index,
@@ -616,13 +725,13 @@ export default function WaiterScreen() {
         })}
         renderItem={({ item: category, index }) => (
           <ScrollView
-            ref={(ref) => { scrollRefs.current[index] = ref; }} // 👈 svaki scrollView svoj ref
-            style={{ width, height }}
+            ref={(ref) => { scrollRefs.current[index] = ref; }}
+            style={{ width, height, backgroundColor: "transparent" }}
             contentContainerStyle={{ paddingBottom: 250 }}
           >
             {category.subcategories.map((sub: DynSub) => (
               <View key={sub.id} style={{ marginBottom: 28 }}>
-                <Text style={styles.subTitle}>{sub.name}</Text>
+                <Text style={[styles.subTitle, { color: DM.subTitle }]}>{sub.name}</Text>
                 <View style={styles.itemsGrid}>
                   {sub.items.map((item: DynItem) => {
                     const qty = getQty(item.id);
@@ -634,13 +743,13 @@ export default function WaiterScreen() {
                         onPress={() => addItem(item, sub.name)}
                         style={[
                           styles.itemCard,
-                          selected && styles.itemCardActive,
+                          { backgroundColor: selected ? "#0E7C86" : DM.cardBg },
                         ]}
                       >
                         <Text
                           style={[
                             styles.itemName,
-                            selected && { color: "#fff" },
+                            { color: selected ? "#fff" : DM.cardText },
                           ]}
                         >
                           {item.name}
@@ -658,6 +767,7 @@ export default function WaiterScreen() {
                           <Animated.View
                             style={[
                               styles.badge,
+                              { backgroundColor: DM.badgeBg },
                               {
                                 transform: [{ scale: badgeAnim[item.id] || 1 }],
                               },
@@ -692,14 +802,22 @@ export default function WaiterScreen() {
         snapPoints={snapPoints}
         enablePanDownToClose={false}
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: "#0E7C86" }}
+        backgroundStyle={{ backgroundColor: SC.bg }}
+        handleIndicatorStyle={{ backgroundColor: SC.handle }}
+        style={{
+          shadowColor: SC.shadow,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.18,
+          shadowRadius: 12,
+          elevation: 20,
+        }}
       >
         <BottomSheetView style={styles.sheet}>
           <Pressable
             onPress={() => sheetRef.current?.snapToIndex(2)}
-            style={styles.sheetHeader}
+            style={[styles.sheetHeader, { backgroundColor: SC.headerBg, borderColor: SC.headerBorder }]}
           >
-            <Text style={styles.sheetTitle}>
+            <Text style={[styles.sheetTitle, { color: SC.title }]}>
               Narudžba ({order.reduce((s, i) => s + i.quantity, 0)})
             </Text>
             {locationMode !== "none" && (
@@ -708,12 +826,12 @@ export default function WaiterScreen() {
                 style={{
                   marginTop: 8,
                   padding: 6,
-                  backgroundColor: "#fff",
+                  backgroundColor: SC.zoneBg,
                   borderRadius: 8,
                   alignSelf: "flex-start",
                 }}
               >
-                <Text style={{ fontWeight: "700", color: "#0E7C86" }}>
+                <Text style={{ fontWeight: "700", color: SC.zoneText }}>
                   {
                     locationMode === "zones" ? (selectedZone || "Odaberi zonu") :
                     locationMode === "tables" ? (selectedTable ? `Sto ${selectedTable}` : "Odaberi sto") :
@@ -730,26 +848,26 @@ export default function WaiterScreen() {
             keyExtractor={(o) => o.id}
             style={{ marginTop: 12 }}
             renderItem={({ item: o }) => (
-              <View key={o.id} style={styles.orderRow}>
+              <View key={o.id} style={[styles.orderRow, { borderColor: SC.rowBorder }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.orderCat}>{o.category}</Text>
-                  <Text style={styles.orderName}>{o.name}</Text>
+                  <Text style={[styles.orderCat, { color: SC.cat }]}>{o.category}</Text>
+                  <Text style={[styles.orderName, { color: SC.name }]}>{o.name}</Text>
                 </View>
                 <View style={styles.orderControls}>
                   <Pressable
-                    style={styles.qtyBtn}
+                    style={[styles.qtyBtn, { backgroundColor: SC.qtyBtnBg, borderColor: SC.qtyBtnBorder }]}
                     onPress={() => removeItem(o.id)}
                   >
-                    <Text style={styles.qtyBtnText}>–</Text>
+                    <Text style={[styles.qtyBtnText, { color: SC.qtyBtnText }]}>–</Text>
                   </Pressable>
-                  <Text style={styles.qty}>{o.quantity}</Text>
+                  <Text style={[styles.qty, { color: SC.qty }]}>{o.quantity}</Text>
                   <Pressable
-                    style={styles.qtyBtn}
+                    style={[styles.qtyBtn, { backgroundColor: SC.qtyBtnBg, borderColor: SC.qtyBtnBorder }]}
                     onPress={() => addItem(o, o.category)}
                   >
-                    <Text style={styles.qtyBtnText}>+</Text>
+                    <Text style={[styles.qtyBtnText, { color: SC.qtyBtnText }]}>+</Text>
                   </Pressable>
-                  <Text style={styles.orderPrice}>
+                  <Text style={[styles.orderPrice, { color: SC.price }]}>
                     {(o.price * o.quantity).toFixed(2)} KM
                   </Text>
                 </View>
@@ -762,14 +880,14 @@ export default function WaiterScreen() {
               value={note}
               onChangeText={setNote}
               placeholder="Napomena"
-              placeholderTextColor="#ccc"
-              style={styles.noteInput}
+              placeholderTextColor={SC.notePlaceholder}
+              style={[styles.noteInput, { backgroundColor: SC.noteBg, color: SC.noteText, borderColor: SC.noteBorder }]}
             />
           )}
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalText}>Ukupno:</Text>
-            <Text style={styles.totalText}>
+            <Text style={[styles.totalText, { color: SC.totalText }]}>Ukupno:</Text>
+            <Text style={[styles.totalText, { color: SC.totalText }]}>
               {order
                 .reduce((sum, i) => sum + i.price * i.quantity, 0)
                 .toFixed(2)}{" "}
@@ -781,9 +899,9 @@ export default function WaiterScreen() {
             <Pressable
               disabled={sending}
               onPress={submitOrder}
-              style={[styles.nextBtn, sending && { opacity: 0.6 }, !isConnected && { backgroundColor: "#D97706" }]}
+              style={[styles.nextBtn, { backgroundColor: SC.btnBg }, sending && { opacity: 0.6 }, !isConnected && { backgroundColor: "#D97706" }]}
             >
-              <Text style={{ fontWeight: "800" }}>
+              <Text style={{ fontWeight: "800", color: !isConnected ? "#fff" : SC.btnText }}>
                 {sending ? "SLANJE..." : !isConnected ? "SAČUVAJ NARUDŽBU 📡" : "POŠALJI NARUDŽBU 🚀"}
               </Text>
             </Pressable>
@@ -795,6 +913,7 @@ export default function WaiterScreen() {
       <WaiterNameModal
         visible={showNameModal}
         onClose={() => setShowNameModal(false)}
+        darkMode={darkMode}
         onSave={(name) => {
           setWaiterName(name);
           setShowNameModal(false);
@@ -814,19 +933,19 @@ export default function WaiterScreen() {
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            style={styles.regionSheet}
+            style={[styles.regionSheet, { backgroundColor: darkMode ? "#1F2937" : "#fff" }]}
           >
             {/* ZONES only */}
             {locationMode === "zones" && (
               <>
-                <Text style={styles.modalTitle}>Izaberi zonu</Text>
+                <Text style={[styles.modalTitle, { color: DM.cardText }]}>Izaberi zonu</Text>
                 {placeZones.map((z) => (
                   <Pressable
                     key={z.name}
                     onPress={() => { setSelectedZone(z.name); setShowZoneSheet(false); }}
                     style={styles.regionBtn}
                   >
-                    <Text style={[styles.regionText, z.name === selectedZone && { fontWeight: "bold", color: "#0E7C86" }]}>
+                    <Text style={[styles.regionText, { color: DM.cardText }, z.name === selectedZone && { fontWeight: "bold", color: "#0E7C86" }]}>
                       {z.name}
                     </Text>
                   </Pressable>
@@ -837,15 +956,15 @@ export default function WaiterScreen() {
             {/* TABLES only */}
             {locationMode === "tables" && (
               <>
-                <Text style={styles.modalTitle}>Izaberi sto</Text>
+                <Text style={[styles.modalTitle, { color: DM.cardText }]}>Izaberi sto</Text>
                 <View style={styles.tableGrid}>
                   {Array.from({ length: tableCount }, (_, i) => i + 1).map(n => (
                     <Pressable
                       key={n}
                       onPress={() => { setSelectedTable(n); setShowZoneSheet(false); }}
-                      style={[styles.tableCell, selectedTable === n && styles.tableCellActive]}
+                      style={[styles.tableCell, { backgroundColor: darkMode ? "#374151" : "#f5f5f5", borderColor: darkMode ? "#4B5563" : "#e5e5e5" }, selectedTable === n && styles.tableCellActive]}
                     >
-                      <Text style={[styles.tableCellText, selectedTable === n && styles.tableCellTextActive]}>{n}</Text>
+                      <Text style={[styles.tableCellText, { color: DM.cardText }, selectedTable === n && styles.tableCellTextActive]}>{n}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -855,20 +974,18 @@ export default function WaiterScreen() {
             {/* ZONES + TABLES */}
             {locationMode === "zones_tables" && (
               <>
-                <Text style={styles.modalTitle}>Izaberi lokaciju</Text>
-                {/* Zone tabs */}
+                <Text style={[styles.modalTitle, { color: DM.cardText }]}>Izaberi lokaciju</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.zoneTabs}>
                   {placeZones.map((z, i) => (
                     <Pressable
                       key={z.name}
                       onPress={() => setActiveZoneTab(i)}
-                      style={[styles.zoneTab, activeZoneTab === i && styles.zoneTabActive]}
+                      style={[styles.zoneTab, { backgroundColor: darkMode ? "#374151" : "#fff", borderColor: darkMode ? "#4B5563" : "#ddd" }, activeZoneTab === i && styles.zoneTabActive]}
                     >
-                      <Text style={[styles.zoneTabText, activeZoneTab === i && styles.zoneTabTextActive]}>{z.name}</Text>
+                      <Text style={[styles.zoneTabText, { color: darkMode ? "#D1D5DB" : "#555" }, activeZoneTab === i && styles.zoneTabTextActive]}>{z.name}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
-                {/* Table grid */}
                 <View style={styles.tableGrid}>
                   {Array.from({ length: placeZones[activeZoneTab]?.tableCount ?? 0 }, (_, i) => i + 1).map(n => (
                     <Pressable
@@ -880,11 +997,13 @@ export default function WaiterScreen() {
                       }}
                       style={[
                         styles.tableCell,
+                        { backgroundColor: darkMode ? "#374151" : "#f5f5f5", borderColor: darkMode ? "#4B5563" : "#e5e5e5" },
                         selectedTable === n && selectedZone === placeZones[activeZoneTab]?.name && styles.tableCellActive,
                       ]}
                     >
                       <Text style={[
                         styles.tableCellText,
+                        { color: DM.cardText },
                         selectedTable === n && selectedZone === placeZones[activeZoneTab]?.name && styles.tableCellTextActive,
                       ]}>{n}</Text>
                     </Pressable>
@@ -911,10 +1030,21 @@ export default function WaiterScreen() {
             onPress={(e) => e.stopPropagation()}
             style={styles.ordersModal}
           >
-            <MyOrdersScreen waiterId={`${waiterName}_${deviceId}`} placeId={placeId} onClose={() => setShowOrdersSheet(false)} />
+            <MyOrdersScreen waiterId={`${waiterName}_${deviceId}`} placeId={placeId} darkMode={darkMode} onClose={() => setShowOrdersSheet(false)} />
           </Pressable>
         </Pressable>
       </Modal>
+
+      <SideDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        role={isAdminPreview ? "admin" : "waiter"}
+        placeId={placeId}
+        sectors={placeSectors}
+        isAdminPreview={isAdminPreview}
+        onNameChange={(name) => setWaiterName(name)}
+        onSettingsPress={() => router.push("/waiter-settings")}
+      />
     </View>
   );
 }
@@ -937,11 +1067,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   categories: {
-    backgroundColor: "#fff",
     paddingHorizontal: 8,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
   },
   categoryBtn: {
     paddingHorizontal: 16,
@@ -1000,49 +1127,59 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingBottom: 12,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "#E4E4E7",
+    backgroundColor: "#F0FDFA",
+    marginHorizontal: -16,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
-  sheetTitle: { color: "#fff", fontWeight: "800" },
+  sheetTitle: { color: "#0E7C86", fontWeight: "800", fontSize: 15 },
   orderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "#F4F4F5",
   },
-  orderCat: { color: "#ccc", fontSize: 12 },
-  orderName: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  orderCat: { color: "#71717A", fontSize: 12 },
+  orderName: { color: "#18181B", fontWeight: "700", fontSize: 14 },
   orderControls: { flexDirection: "row", alignItems: "center" },
   qtyBtn: {
-    backgroundColor: "#fff",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    backgroundColor: "#F0FDFA",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 4,
+    marginHorizontal: 5,
+    borderWidth: 1.5,
+    borderColor: "#99E6EC",
   },
-  qtyBtnText: { color: "#0E7C86", fontWeight: "800", fontSize: 18 },
-  qty: { color: "#fff", fontWeight: "700", marginHorizontal: 4 },
-  orderPrice: { color: "#fff", marginLeft: 8, fontWeight: "700" },
+  qtyBtnText: { color: "#0E7C86", fontWeight: "800", fontSize: 16, includeFontPadding: false, textAlignVertical: "center", textAlign: "center" },
+  qty: { color: "#18181B", fontWeight: "700", marginHorizontal: 4 },
+  orderPrice: { color: "#18181B", marginLeft: 8, fontWeight: "700" },
   noteInput: {
     marginVertical: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#FAFAFA",
     borderRadius: 12,
     padding: 12,
-    color: "#000",
+    color: "#18181B",
+    borderWidth: 1,
+    borderColor: "#E4E4E7",
+    fontSize: 14,
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 8,
   },
-  totalText: { color: "#fff", fontWeight: "800", fontSize: 18 },
+  totalText: { color: "#18181B", fontWeight: "800", fontSize: 18 },
   nextBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: "#0E7C86",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",

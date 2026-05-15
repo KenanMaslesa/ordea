@@ -12,11 +12,35 @@ import {
     Text,
     TextInput
 } from "react-native";
+import { useTheme } from "./context/ThemeContext";
 import { setItem } from "./helper";
 import { createPlace } from "./services/place.service";
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { darkMode } = useTheme();
+
+  const D = darkMode ? {
+    wrapper: "#111827",
+    subtitle: "#9CA3AF",
+    label: "#D1D5DB",
+    hint: "#6B7280",
+    input: "#1F2937",
+    inputBorder: "#374151",
+    inputText: "#E5E7EB",
+    placeholder: "#6B7280",
+    link: "#22D3EE",
+  } : {
+    wrapper: "#F4F5F7",
+    subtitle: "#666",
+    label: "#444",
+    hint: "#888",
+    input: "#fff",
+    inputBorder: "#ddd",
+    inputText: "#18181B",
+    placeholder: "#A1A1AA",
+    link: "#0E7C86",
+  };
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,40 +87,43 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.wrapper}
+      style={[styles.wrapper, { backgroundColor: D.wrapper }]}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: D.wrapper }]} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Registracija</Text>
-        <Text style={styles.subtitle}>Kreirajte admin nalog za vaš objekat</Text>
+        <Text style={[styles.subtitle, { color: D.subtitle }]}>Kreirajte admin nalog za vaš objekat</Text>
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={[styles.label, { color: D.label }]}>Email</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
           placeholder="admin@email.com"
+          placeholderTextColor={D.placeholder}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
 
-        <Text style={styles.label}>Lozinka</Text>
+        <Text style={[styles.label, { color: D.label }]}>Lozinka</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
           placeholder="Min. 6 znakova"
+          placeholderTextColor={D.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        <Text style={styles.label}>Naziv objekta</Text>
+        <Text style={[styles.label, { color: D.label }]}>Naziv objekta</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
           placeholder="npr. Caffe Bar Centar"
+          placeholderTextColor={D.placeholder}
           value={placeName}
           onChangeText={setPlaceName}
         />
 
-        <Text style={[styles.hint, { marginTop: 8, textAlign: "center" }]}>
+        <Text style={[styles.hint, { marginTop: 8, textAlign: "center", color: D.hint }]}>
           Zone, stolove i ostale postavke podešavate u admin panelu nakon registracije.
         </Text>
 
@@ -109,7 +136,7 @@ export default function RegisterScreen() {
         </Pressable>
 
         <Pressable onPress={() => router.replace("/login")} style={{ marginTop: 16, alignItems: "center" }}>
-          <Text style={styles.linkText}>Već imate nalog? Prijavite se</Text>
+          <Text style={[styles.linkText, { color: D.link }]}>Već imate nalog? Prijavite se</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -14,6 +14,7 @@ import {
   TextInput,
   View
 } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 import { LocationMode, Place, Sector, Zone } from "../../types/order.types";
 
 const SECTOR_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
@@ -32,6 +33,7 @@ const SECTOR_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
 
 interface Props {
   placeId: string;
+  onMenuPress?: () => void;
 }
 
 const MODE_OPTIONS: { value: LocationMode; label: string; desc: string }[] = [
@@ -41,7 +43,81 @@ const MODE_OPTIONS: { value: LocationMode; label: string; desc: string }[] = [
   { value: "zones_tables", label: "Zone + stolovi", desc: "Konobar bira zonu pa sto" },
 ];
 
-export default function AdminPlaceSettings({ placeId }: Props) {
+export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
+  const { darkMode } = useTheme();
+
+  const D = darkMode ? {
+    root: "#111827",
+    headerBg: "#1F2937",
+    headerBorder: "#374151",
+    headerTitle: "#F9FAFB",
+    hamburgerBox: "#374151",
+    card: "#1F2937",
+    cardBorder: "#374151",
+    cardTitle: "#6B7280",
+    infoText: "#E5E7EB",
+    infoLabel: "#9CA3AF",
+    sectionTitle: "#F3F4F6",
+    sectionHint: "#6B7280",
+    modeCard: "#1F2937",
+    modeCardBorder: "#374151",
+    modeLabel: "#E5E7EB",
+    modeDesc: "#6B7280",
+    modeRadioBorder: "#4B5563",
+    zoneCard: "#1F2937",
+    zoneCardBorder: "#374151",
+    input: "#1F2937",
+    inputBorder: "#374151",
+    inputText: "#E5E7EB",
+    placeholder: "#6B7280",
+    tablePreview: "#6B7280",
+    tableCountBox: "#111827",
+    tableCountBorder: "#374151",
+    iconPickerScroll: "#1a2637",
+    iconPickerBorder: "#374151",
+    iconPickerItem: "#374151",
+    iconPickerItemBorder: "#4B5563",
+    sectorIconBtn: "#374151",
+    unsavedBannerBg: "#78350F",
+    unsavedBannerBorder: "#92400E",
+    unsavedBannerText: "#FDE68A",
+  } : {
+    root: "#f9f9f9",
+    headerBg: "#fff",
+    headerBorder: "#F0F0F0",
+    headerTitle: "#18181B",
+    hamburgerBox: "#F0FDFA",
+    card: "#fff",
+    cardBorder: "#eee",
+    cardTitle: "#888",
+    infoText: "#333",
+    infoLabel: "#555",
+    sectionTitle: "#222",
+    sectionHint: "#888",
+    modeCard: "#fff",
+    modeCardBorder: "#e5e5e5",
+    modeLabel: "#444",
+    modeDesc: "#888",
+    modeRadioBorder: "#ccc",
+    zoneCard: "#fff",
+    zoneCardBorder: "#e5e5e5",
+    input: "#fff",
+    inputBorder: "#ddd",
+    inputText: "#1a1a1a",
+    placeholder: "#A1A1AA",
+    tablePreview: "#888",
+    tableCountBox: "#f0fafb",
+    tableCountBorder: "#b2dfdf",
+    iconPickerScroll: "#f0fafb",
+    iconPickerBorder: "#b2dfdf",
+    iconPickerItem: "#fff",
+    iconPickerItemBorder: "#ddd",
+    sectorIconBtn: "#e8f8f9",
+    unsavedBannerBg: "#fff3cd",
+    unsavedBannerBorder: "#ffc107",
+    unsavedBannerText: "#856404",
+  };
+
   const [place, setPlace] = useState<Place | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>("zones");
   const [zones, setZones] = useState<Zone[]>([]);
@@ -138,11 +214,28 @@ export default function AdminPlaceSettings({ placeId }: Props) {
   const showGlobalTables = locationMode === "tables";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f9f9f9" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: D.root }}>
+      {/* ── HEADER ── */}
+      <View style={{
+        flexDirection: "row", alignItems: "center",
+        backgroundColor: D.headerBg,
+        paddingHorizontal: 8, paddingVertical: 10,
+        borderBottomWidth: 1, borderBottomColor: D.headerBorder,
+        shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06, shadowRadius: 4, elevation: 3,
+      }}>
+        <Pressable onPress={onMenuPress} hitSlop={12} style={{ padding: 6 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: D.hamburgerBox, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="menu" size={20} color="#0E7C86" />
+          </View>
+        </Pressable>
+        <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: D.headerTitle, letterSpacing: -0.3 }}>Postavke</Text>
+        <View style={{ width: 44 }} />
+      </View>
       {/* Unsaved changes banner */}
       {dirty && (
-        <View style={styles.unsavedBanner}>
-          <Text style={styles.unsavedBannerText}>⚠️ Imate nespremljene promjene</Text>
+        <View style={[styles.unsavedBanner, { backgroundColor: D.unsavedBannerBg, borderBottomColor: D.unsavedBannerBorder }]}>
+          <Text style={[styles.unsavedBannerText, { color: D.unsavedBannerText }]}>⚠️ Imate nespremljene promjene</Text>
         </View>
       )}
 
@@ -157,21 +250,21 @@ export default function AdminPlaceSettings({ placeId }: Props) {
 
         {/* Osnovne informacije */}
         {place && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Objekat</Text>
-            <Text style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Naziv: </Text>{place.name}
+          <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
+            <Text style={[styles.cardTitle, { color: D.cardTitle }]}>Objekat</Text>
+            <Text style={[styles.infoRow, { color: D.infoText }]}>
+              <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Naziv: </Text>{place.name}
             </Text>
-            <Text style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Join kod: </Text>
+            <Text style={[styles.infoRow, { color: D.infoText }]}>
+              <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Join kod: </Text>
               <Text style={styles.joinCode}>{place.joinCode}</Text>
             </Text>
           </View>
         )}
 
         {/* Mod lokacije */}
-        <Text style={styles.sectionTitle}>Izbor lokacije</Text>
-        <Text style={styles.sectionHint}>
+        <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>Izbor lokacije</Text>
+        <Text style={[styles.sectionHint, { color: D.sectionHint }]}>
           Određuje šta konobar bira prije slanja narudžbe.
         </Text>
 
@@ -179,16 +272,16 @@ export default function AdminPlaceSettings({ placeId }: Props) {
           <Pressable
             key={opt.value}
             onPress={() => { setLocationMode(opt.value); setDirty(true); }}
-            style={[styles.modeCard, locationMode === opt.value && styles.modeCardActive]}
+            style={[styles.modeCard, { backgroundColor: D.modeCard, borderColor: locationMode === opt.value ? "#0E7C86" : D.modeCardBorder }, locationMode === opt.value && styles.modeCardActive]}
           >
-            <View style={styles.modeRadio}>
+            <View style={[styles.modeRadio, { borderColor: locationMode === opt.value ? "#0E7C86" : D.modeRadioBorder }]}>
               {locationMode === opt.value && <View style={styles.modeRadioDot} />}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.modeLabel, locationMode === opt.value && styles.modeLabelActive]}>
+              <Text style={[styles.modeLabel, { color: locationMode === opt.value ? "#0E7C86" : D.modeLabel }]}>
                 {opt.label}
               </Text>
-              <Text style={styles.modeDesc}>{opt.desc}</Text>
+              <Text style={[styles.modeDesc, { color: D.modeDesc }]}>{opt.desc}</Text>
             </View>
           </Pressable>
         ))}
@@ -196,26 +289,27 @@ export default function AdminPlaceSettings({ placeId }: Props) {
         {/* Zone */}
         {showZones && (
           <>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>
               {showPerZoneTables ? "Zone i stolovi" : "Zone"}
             </Text>
             {showPerZoneTables && (
-              <Text style={styles.sectionHint}>Unesite naziv zone i broj stolova u toj zoni.</Text>
+              <Text style={[styles.sectionHint, { color: D.sectionHint }]}>Unesite naziv zone i broj stolova u toj zoni.</Text>
             )}
             {zones.map((z, i) => (
-              <View key={i} style={styles.zoneCard}>
+              <View key={i} style={[styles.zoneCard, { backgroundColor: D.zoneCard, borderColor: D.zoneCardBorder }]}>
                 <View style={styles.zoneCardRow}>
                   <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    style={[styles.input, { flex: 1, marginBottom: 0, backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
                     value={z.name}
                     onChangeText={v => updateZone(i, "name", v)}
                     placeholder={`Zona ${i + 1} (npr. Sala, Terasa)`}
+                    placeholderTextColor={D.placeholder}
                   />
                   {showPerZoneTables && (
-                    <View style={styles.tableCountBox}>
+                    <View style={[styles.tableCountBox, { backgroundColor: D.tableCountBox, borderColor: D.tableCountBorder }]}>
                       <Text style={styles.tableCountLabel}>Stolovi</Text>
                       <TextInput
-                        style={styles.tableCountInput}
+                        style={[styles.tableCountInput]}
                         value={z.tableCount > 0 ? String(z.tableCount) : ""}
                         onChangeText={v => updateZone(i, "tableCount", parseInt(v) || 0)}
                         keyboardType="number-pad"
@@ -228,7 +322,7 @@ export default function AdminPlaceSettings({ placeId }: Props) {
                   </Pressable>
                 </View>
                 {showPerZoneTables && z.tableCount > 0 && (
-                  <Text style={styles.tablePreview}>
+                  <Text style={[styles.tablePreview, { color: D.tablePreview }]}>
                     Stolovi: {Array.from({ length: Math.min(z.tableCount, 6) }, (_, k) => k + 1).join(", ")}
                     {z.tableCount > 6 ? ` ... ${z.tableCount}` : ""}
                   </Text>
@@ -244,16 +338,17 @@ export default function AdminPlaceSettings({ placeId }: Props) {
         {/* Globalni stolovi (samo "tables" mod) */}
         {showGlobalTables && (
           <>
-            <Text style={styles.sectionTitle}>Broj stolova</Text>
+            <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>Broj stolova</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
               value={tableCount}
               onChangeText={v => { setTableCount(v); setDirty(true); }}
               keyboardType="number-pad"
               placeholder="npr. 20"
+              placeholderTextColor={D.placeholder}
             />
             {parseInt(tableCount) > 0 && (
-              <Text style={styles.tablePreview}>
+              <Text style={[styles.tablePreview, { color: D.tablePreview }]}>
                 Stolovi: {Array.from({ length: Math.min(parseInt(tableCount), 8) }, (_, i) => i + 1).join(", ")}
                 {parseInt(tableCount) > 8 ? ` ... ${tableCount}` : ""}
               </Text>
@@ -262,15 +357,15 @@ export default function AdminPlaceSettings({ placeId }: Props) {
         )}
 
         {/* Sektori */}
-        <Text style={styles.sectionTitle}>Sektori</Text>
-        <Text style={styles.sectionHint}>
+        <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>Sektori</Text>
+        <Text style={[styles.sectionHint, { color: D.sectionHint }]}>
           Definiraju gdje ide svaka stavka menija (Šank, Kuhinja...). Osoblje bira sektor pri prijavi.
         </Text>
         {sectors.map((s, i) => (
           <View key={s.id}>
             <View style={styles.sectorRow}>
               <Pressable
-                style={styles.sectorIconBtn}
+                style={[styles.sectorIconBtn, { backgroundColor: D.sectorIconBtn }]}
                 onPress={() => setIconPickerOpen(iconPickerOpen === s.id ? null : s.id)}
               >
                 <Ionicons
@@ -280,10 +375,11 @@ export default function AdminPlaceSettings({ placeId }: Props) {
                 />
               </Pressable>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, { flex: 1, backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
                 value={s.name}
                 onChangeText={v => updateSector(i, "name", v)}
                 placeholder={`Sektor ${i + 1} (npr. Šank, Kuhinja)`}
+                placeholderTextColor={D.placeholder}
               />
               <Pressable onPress={() => removeSector(i)} style={styles.removeBtn}>
                 <Ionicons name="close" size={16} color="#ef4444" />
@@ -295,14 +391,14 @@ export default function AdminPlaceSettings({ placeId }: Props) {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.iconPickerScroll}
+                style={[styles.iconPickerScroll, { backgroundColor: D.iconPickerScroll, borderColor: D.iconPickerBorder }]}
                 contentContainerStyle={styles.iconPickerRow}
                 keyboardShouldPersistTaps="handled"
               >
                 {SECTOR_ICONS.map(ic => (
                   <Pressable
                     key={ic}
-                    style={[styles.iconPickerItem, s.icon === ic && styles.iconPickerItemActive]}
+                    style={[styles.iconPickerItem, { backgroundColor: D.iconPickerItem, borderColor: D.iconPickerItemBorder }, s.icon === ic && styles.iconPickerItemActive]}
                     onPress={() => {
                       updateSector(i, "icon", ic);
                       setIconPickerOpen(null);

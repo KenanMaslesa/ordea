@@ -13,6 +13,7 @@ interface Props {
   waiterId: string;
   placeId: string;
   onClose?: () => void;
+  darkMode?: boolean;
 }
 
 const TEAL = "#0E7C86";
@@ -27,9 +28,36 @@ const formatElapsed = (ms: number) => {
   return `${sec}s`;
 };
 
-export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
+export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = false }: Props) {
   const { myOrders, timeNow, removeOrder, removeAllDone } = useMyOrders(placeId, waiterId);
   const [activeTab, setActiveTab] = useState<"pending" | "done">("pending");
+
+  const D = {
+    root:        darkMode ? "#111827" : "#F4F5F7",
+    header:      darkMode ? "#1F2937" : "#fff",
+    headerBorder:darkMode ? "#374151" : "#f3f4f6",
+    title:       darkMode ? "#F9FAFB" : "#111827",
+    closeBtn:    darkMode ? "#374151" : "#f3f4f6",
+    closeIcon:   darkMode ? "#9ca3af" : "#6b7280",
+    tabBar:      darkMode ? "#1F2937" : "#fff",
+    tabBorder:   darkMode ? "#374151" : "#e5e7eb",
+    tabText:     darkMode ? "#9ca3af" : "#6b7280",
+    card:        darkMode ? "#1F2937" : "#fff",
+    pill:        darkMode ? "#374151" : "#f3f4f6",
+    pillText:    darkMode ? "#D1D5DB" : "#374151",
+    timerChip:   darkMode ? "#374151" : "#f3f4f6",
+    timerText:   darkMode ? "#9ca3af" : "#6b7280",
+    itemName:    darkMode ? "#F9FAFB" : "#111827",
+    qtyText:     darkMode ? "#E5E7EB" : "#374151",
+    qtyBorder:   darkMode ? "#4B5563" : "#d1d5db",
+    emptyIcon:   darkMode ? "#4B5563" : "#d1d5db",
+    emptyTitle:  darkMode ? "#9ca3af" : "#374151",
+    emptySubtitle: darkMode ? "#6b7280" : "#9ca3af",
+    price:       darkMode ? "#F9FAFB" : TEAL,
+    removeBtnText: darkMode ? "#6b7280" : "#9ca3af",
+    clearAllBg:  darkMode ? "#374151" : "#fff",
+    clearAllText: darkMode ? "#f87171" : "#ef4444",
+  };
 
   const last25h = Date.now() - 25 * 60 * 60 * 1000;
 
@@ -64,7 +92,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
       : [];
 
     return (
-      <View style={[styles.card, isUrgent && styles.cardUrgent]}>
+      <View style={[styles.card, isUrgent && styles.cardUrgent, { backgroundColor: D.card }]}>
         {/* Header row */}
         <View style={styles.cardTop}>
           <View style={styles.cardTopLeft}>
@@ -72,17 +100,17 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
               <Text style={styles.indexText}>{index + 1}</Text>
             </View>
             {!!order.region && (
-              <View style={styles.regionPill}>
-                <Ionicons name="location-outline" size={12} color="#6b7280" />
-                <Text style={styles.regionText}>{order.region}</Text>
+              <View style={[styles.regionPill, { backgroundColor: D.pill }]}>
+                <Ionicons name="location-outline" size={12} color={D.pillText} />
+                <Text style={[styles.regionText, { color: D.pillText }]}>{order.region}</Text>
               </View>
             )}
           </View>
 
           {isPending ? (
-            <View style={[styles.timerChip, isUrgent && styles.timerChipUrgent]}>
-              <Ionicons name="time-outline" size={13} color={isUrgent ? "#ef4444" : "#6b7280"} />
-              <Text style={[styles.timerText, isUrgent && styles.timerTextUrgent]}>
+            <View style={[styles.timerChip, isUrgent && styles.timerChipUrgent, !isUrgent && { backgroundColor: D.timerChip }]}>
+              <Ionicons name="time-outline" size={13} color={isUrgent ? "#ef4444" : D.timerText} />
+              <Text style={[styles.timerText, isUrgent && styles.timerTextUrgent, !isUrgent && { color: D.timerText }]}>
                 {formatElapsed(elapsed)}
               </Text>
             </View>
@@ -103,9 +131,9 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
               <Text style={styles.categoryLabel}>{cat}</Text>
               {items.map((item: any, idx: number) => (
                 <View key={idx} style={styles.itemRow}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <View style={[styles.qtyBadge, item.qty > 1 ? styles.qtyBadgeRed : styles.qtyBadgeGray]}>
-                    <Text style={[styles.qtyText, item.qty > 1 && { color: "#fff" }]}>×{item.qty}</Text>
+                  <Text style={[styles.itemName, { color: D.itemName }]}>{item.name}</Text>
+                  <View style={[styles.qtyBadge, item.qty > 1 ? styles.qtyBadgeRed : [styles.qtyBadgeGray, { borderColor: D.qtyBorder }]]}>
+                    <Text style={[styles.qtyText, item.qty > 1 && { color: "#fff" }, item.qty <= 1 && { color: D.qtyText }]}>×{item.qty}</Text>
                   </View>
                 </View>
               ))}
@@ -146,12 +174,12 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
         {/* Footer */}
         <View style={styles.cardFooter}>
           {order.totalPrice != null && (
-            <Text style={styles.price}>{order.totalPrice.toFixed(2)} KM</Text>
+            <Text style={[styles.price, { color: D.price }]}>{order.totalPrice.toFixed(2)} KM</Text>
           )}
           {!isPending && (
             <Pressable style={styles.removeBtn} onPress={() => removeOrder(order.id)} hitSlop={8}>
-              <Ionicons name="trash-outline" size={14} color="#9ca3af" />
-              <Text style={styles.removeBtnText}>Ukloni</Text>
+              <Ionicons name="trash-outline" size={14} color={D.removeBtnText} />
+              <Text style={[styles.removeBtnText, { color: D.removeBtnText }]}>Ukloni</Text>
             </Pressable>
           )}
         </View>
@@ -160,18 +188,18 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
   };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: D.root }]}>
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: D.header, borderBottomColor: D.headerBorder }]}>
         <View style={{ width: 32 }} />
-        <Text style={styles.headerTitle}>Moje narudžbe</Text>
+        <Text style={[styles.headerTitle, { color: D.title }]}>Moje narudžbe</Text>
         {onClose ? (
-          <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={10}>
-            <Ionicons name="close" size={20} color="#6b7280" />
+          <Pressable style={[styles.closeBtn, { backgroundColor: D.closeBtn }]} onPress={onClose} hitSlop={10}>
+            <Ionicons name="close" size={20} color={D.closeIcon} />
           </Pressable>
         ) : <View style={{ width: 32 }} />}
       </View>
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { backgroundColor: D.tabBar, borderBottomColor: D.tabBorder }]}>
         {(["pending", "done"] as const).map(tab => {
           const count = tab === "pending" ? pendingOrders.length : doneOrders.length;
           const active = activeTab === tab;
@@ -181,7 +209,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
               style={[styles.tabBtn, active && styles.tabBtnActive]}
               onPress={() => setActiveTab(tab)}
             >
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+              <Text style={[styles.tabLabel, { color: D.tabText }, active && styles.tabLabelActive]}>
                 {tab === "pending" ? "Na čekanju" : "Završene"}
               </Text>
               {count > 0 && (
@@ -200,12 +228,12 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
           <Ionicons
             name={activeTab === "pending" ? "receipt-outline" : "checkmark-done-outline"}
             size={52}
-            color="#d1d5db"
+            color={D.emptyIcon}
           />
-          <Text style={styles.emptyTitle}>
+          <Text style={[styles.emptyTitle, { color: D.emptyTitle }]}>
             {activeTab === "pending" ? "Nema aktivnih narudžbi" : "Nema završenih narudžbi"}
           </Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptySubtitle, { color: D.emptySubtitle }]}>
             {activeTab === "pending"
               ? "Narudžbe koje pošalješ pojavit će se ovdje"
               : "Završene narudžbe prikazat će se ovdje"}
@@ -219,9 +247,9 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose }: Props) {
           renderItem={renderCard}
           ListFooterComponent={
             activeTab === "done" && doneOrders.length > 0 ? (
-              <Pressable style={styles.clearAllBtn} onPress={removeAllDone}>
-                <Ionicons name="trash-outline" size={15} color="#ef4444" />
-                <Text style={styles.clearAllText}>Obriši sve završene</Text>
+              <Pressable style={[styles.clearAllBtn, { backgroundColor: D.clearAllBg }]} onPress={removeAllDone}>
+                <Ionicons name="trash-outline" size={15} color={D.clearAllText} />
+                <Text style={[styles.clearAllText, { color: D.clearAllText }]}>Obriši sve završene</Text>
               </Pressable>
             ) : null
           }
