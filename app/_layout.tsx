@@ -8,7 +8,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { StatusBar } from "react-native";
+import { Platform, StatusBar } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
@@ -58,6 +58,13 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { primaryColor } = useTheme();
+
+  // Dinamički ažuriraj theme-color meta tag (browser chrome boja na mobilnom)
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const meta = document.querySelector("meta[name='theme-color']");
+    if (meta) meta.setAttribute("content", primaryColor);
+  }, [primaryColor]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

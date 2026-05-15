@@ -10,7 +10,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0E7C86" />
 
         {/* 
           Original viewport, now enhanced for PWA/mobile web:
@@ -44,6 +43,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
 const responsiveBackground = `
 body {
-  background-color: #0E7C86;
+  background-color: #ffffff;
 }
 `;
