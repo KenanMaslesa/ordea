@@ -294,7 +294,8 @@ export default function WaiterScreen() {
         </Pressable>
       ) : () => null,
       headerRight: () => {
-        const doneCount = myOrders.filter(o => o.status === "done").length
+        const last25h = Date.now() - 25 * 60 * 60 * 1000;
+        const doneCount = myOrders.filter(o => o.status === "done" && (o.finishedAt ?? o.createdAt) >= last25h).length
         const pendingCount = myOrders.filter(o => o.status === "pending").length
       
         return (
@@ -910,7 +911,7 @@ export default function WaiterScreen() {
             onPress={(e) => e.stopPropagation()}
             style={styles.ordersModal}
           >
-            <MyOrdersScreen waiterId={`${waiterName}_${deviceId}`} placeId={placeId} />
+            <MyOrdersScreen waiterId={`${waiterName}_${deviceId}`} placeId={placeId} onClose={() => setShowOrdersSheet(false)} />
           </Pressable>
         </Pressable>
       </Modal>
@@ -930,10 +931,10 @@ const styles = StyleSheet.create({
   adminBackBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   ordersModal: {
     backgroundColor: "#fff",
-    padding: 24,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    maxHeight: "90%",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    height: "88%",
+    overflow: "hidden",
   },
   categories: {
     backgroundColor: "#fff",

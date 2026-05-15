@@ -1,5 +1,5 @@
 import { db, ordersPath } from "@/firebase"
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore"
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore"
 import { Order, OrderCreateInput, OrderItem } from "../types/order.types"
 
 export type OrdersListener = (
@@ -11,7 +11,11 @@ export type OrdersListener = (
 ) => void
 
 export function listenOrders(placeId: string, cb: OrdersListener) {
-  return onSnapshot(collection(db, ordersPath(placeId)), snap => {
+  const q = query(
+    collection(db, ordersPath(placeId)),
+    where("status", "==", "pending")
+  )
+  return onSnapshot(q, snap => {
     const orders: Order[] = snap.docs.map(d => ({
       id: d.id,
       ...(d.data() as Omit<Order, "id">),
@@ -39,33 +43,38 @@ export async function markOrderDone(placeId: string, orderId: string) {
 /**
  * Marks one sector as done for an order.
  * If ALL sectors that appear in orderItems are done, sets status="done".
+ * Pass currentSectorStatus from client to avoid an extra getDoc read.
  */
 export async function markSectorDone(
   placeId: string,
   orderId: string,
   sectorId: string,
-  orderItems: OrderItem[]
+  orderItems: OrderItem[],
+  currentSectorStatus?: Record<string, string>
 ) {
   const ref = doc(db, ordersPath(placeId), orderId)
   const now = Date.now()
 
-  // 1. Write sector done
-  await updateDoc(ref, {
-    [`sectorStatus.${sectorId}`]: "done",
-    [`sectorFinishedAt.${sectorId}`]: now,
-  })
-
-  // 2. Check if all sectors in this order are now done
   const uniqueSectorIds = [...new Set(orderItems.map(i => i.sectorId).filter(Boolean))]
-  if (uniqueSectorIds.length === 0) return
 
-  const snap = await getDoc(ref)
-  if (!snap.exists()) return
-  const currentStatus = (snap.data().sectorStatus ?? {}) as Record<string, string>
+  // Optimistically merge the new done sector into the known status
+  const mergedStatus: Record<string, string> = { ...(currentSectorStatus ?? {}), [sectorId]: "done" }
+  const allDone = uniqueSectorIds.length > 0 && uniqueSectorIds.every(id => mergedStatus[id] === "done")
 
-  const allDone = uniqueSectorIds.every(id => currentStatus[id] === "done")
   if (allDone) {
-    await updateDoc(ref, { status: "done", finishedAt: now })
+    // Single write: mark sector done + order done
+    await updateDoc(ref, {
+      [`sectorStatus.${sectorId}`]: "done",
+      [`sectorFinishedAt.${sectorId}`]: now,
+      status: "done",
+      finishedAt: now,
+    })
+  } else {
+    // Just mark the sector
+    await updateDoc(ref, {
+      [`sectorStatus.${sectorId}`]: "done",
+      [`sectorFinishedAt.${sectorId}`]: now,
+    })
   }
 }
 
@@ -86,21 +95,41 @@ export function listenMyOrders(
   waiterId: string,
   cb: (orders: Order[]) => void
 ) {
-  const q = query(
+  const last25h = Date.now() - 25 * 60 * 60 * 1000
+
+  const toOrder = (d: any): Order => ({
+    id: d.id,
+    ...(d.data() as Omit<Order, "id">),
+    orderNote: d.data().orderNote ?? null,
+    finishedAt: d.data().finishedAt ?? null,
+  })
+
+  let pendingOrders: Order[] = []
+  let doneOrders: Order[] = []
+  const emit = () => cb([...pendingOrders, ...doneOrders])
+
+  const qPending = query(
     collection(db, ordersPath(placeId)),
-    where("waiterId", "==", waiterId)
+    where("waiterId", "==", waiterId),
+    where("status", "==", "pending")
+  )
+  const qDone = query(
+    collection(db, ordersPath(placeId)),
+    where("waiterId", "==", waiterId),
+    where("status", "==", "done"),
+    where("finishedAt", ">=", last25h)
   )
 
-  return onSnapshot(q, snap => {
-    const orders: Order[] = snap.docs.map(d => ({
-      id: d.id,
-      ...(d.data() as Omit<Order, "id">),
-      orderNote: d.data().orderNote ?? null,
-      finishedAt: d.data().finishedAt ?? null,
-    }))
-
-    cb(orders)
+  const unsubPending = onSnapshot(qPending, snap => {
+    pendingOrders = snap.docs.map(toOrder)
+    emit()
   })
+  const unsubDone = onSnapshot(qDone, snap => {
+    doneOrders = snap.docs.map(toOrder)
+    emit()
+  })
+
+  return () => { unsubPending(); unsubDone() }
 }
 
 export async function deleteOrder(placeId: string, orderId: string) {

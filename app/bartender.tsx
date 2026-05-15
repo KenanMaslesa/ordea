@@ -241,15 +241,19 @@ export default function Bartender() {
     );
     if (!isConnected) {
       // Fire-and-forget — Firestore buffers the update and sends when online
+      let optimisticStatus = { ...(order.sectorStatus ?? {}) };
       for (const sid of relevantSectors) {
-        markSectorDone(placeId, order.id, sid, order.items).catch(console.error);
+        markSectorDone(placeId, order.id, sid, order.items, optimisticStatus).catch(console.error);
+        optimisticStatus = { ...optimisticStatus, [sid]: "done" };
       }
       pendingOfflineDoneRef.current += 1;
       setPendingOfflineDoneCount(c => c + 1);
       return;
     }
+    let optimisticStatus = { ...(order.sectorStatus ?? {}) };
     for (const sid of relevantSectors) {
-      await markSectorDone(placeId, order.id, sid, order.items);
+      await markSectorDone(placeId, order.id, sid, order.items, optimisticStatus);
+      optimisticStatus = { ...optimisticStatus, [sid]: "done" };
     }
   };
 
@@ -370,7 +374,7 @@ export default function Bartender() {
       {/* ── HISTORY MODAL ── */}
       <Modal visible={showHistory} animationType="slide" onRequestClose={() => setShowHistory(false)}>
         <BartenderHistoryScreen
-          orders={orders}
+          placeId={placeId ?? ""}
           mySectorIds={mySectorIds}
           sectors={sectors}
           C={C}

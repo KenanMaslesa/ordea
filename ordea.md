@@ -221,3 +221,4 @@ Kafić, caffe bar, restoran, pizzeria, fast food, slastičarnica, pekara, beach 
 
 dodati:
 opcija otkazivanja narudzbe admin setuje i vrijeme u kojem se moze otkazati 1min npr
+admin mora imati uvid ko koristi app i izbrisati korisnike (deviceid+name) se unese kad konobar unese ime/promijeni ga spremi se u firestore

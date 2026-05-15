@@ -1,15 +1,16 @@
 import { auth, db, placesRoot } from "@/firebase";
 import {
-    addDoc,
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    getDocsFromServer,
-    query,
-    setDoc,
-    updateDoc,
-    where,
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  getDocsFromServer,
+  increment,
+  query,
+  setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import { LocationMode, Place } from "../types/order.types";
 
@@ -104,10 +105,7 @@ export async function getPlaceById(placeId: string): Promise<Place | null> {
 }
 
 export async function incrementMenuVersion(placeId: string): Promise<void> {
-  const ref = doc(db, placesRoot(), placeId);
-  const d = await getDoc(ref);
-  if (!d.exists()) return;
-  await updateDoc(ref, { menuVersion: (d.data().menuVersion ?? 0) + 1 });
+  await updateDoc(doc(db, placesRoot(), placeId), { menuVersion: increment(1) });
 }
 
 export async function updatePlaceZones(placeId: string, zones: string[]): Promise<void> {

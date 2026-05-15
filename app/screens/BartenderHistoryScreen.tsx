@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     Pressable,
     ScrollView,
     StatusBar,
@@ -9,13 +11,14 @@ import {
     View,
 } from "react-native";
 import { EdgeInsets } from "react-native-safe-area-context";
+import { db, ordersPath } from "../../firebase";
 import { Order, Sector } from "../types/order.types";
 import { AppTheme } from "../types/theme.types";
 import OrderCard from "./components/OrderCard";
 
 /* ── PROPS ── */
 interface Props {
-  orders: Order[];
+  placeId: string;
   mySectorIds: string[];
   sectors: Sector[];
   C: AppTheme;
@@ -33,30 +36,48 @@ function formatAgo(seconds: number) {
 
 /* ================= COMPONENT ================= */
 
-export default function BartenderHistoryScreen({ orders, mySectorIds, sectors, C, insets, onClose }: Props) {
+export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, C, insets, onClose }: Props) {
   const [hoursBack, setHoursBack] = useState(1);
   const [selectedWaiter, setSelectedWaiter] = useState<string | null>(null);
-  const now = Date.now();
+  const [fetchedOrders, setFetchedOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
   const styles = useMemo(() => makeStyles(C), [C]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function fetch() {
+      if (!placeId) return;
+      setLoading(true);
+      try {
+        const cutoff = Date.now() - hoursBack * 3_600_000;
+        const q = query(
+          collection(db, ordersPath(placeId)),
+          where("status", "==", "done"),
+          where("finishedAt", ">=", cutoff)
+        );
+        const snap = await getDocs(q);
+        if (!cancelled) {
+          setFetchedOrders(snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Order, "id">) })));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetch();
+    return () => { cancelled = true; };
+  }, [placeId, hoursBack]);
+
   const doneOrders = useMemo(() => {
-    const cutoff = now - hoursBack * 3_600_000;
-    return orders
+    return fetchedOrders
       .filter(o => {
-        if (o.status === "cancelled") return false;
-        if (mySectorIds.length === 0) return o.status === "done" && o.createdAt >= cutoff;
+        if (mySectorIds.length === 0) return true;
         const hasMyItems = o.items.some(i => mySectorIds.includes(i.sectorId ?? ""));
         if (!hasMyItems) return false;
         const relevantSectors = mySectorIds.filter(sid => o.items.some(i => i.sectorId === sid));
-        const myDone = relevantSectors.every(sid => o.sectorStatus?.[sid] === "done");
-        if (!myDone) return false;
-        const finishedTs = Math.max(
-          ...relevantSectors.map(sid => o.sectorFinishedAt?.[sid] ?? 0).filter(Boolean)
-        );
-        return finishedTs >= cutoff;
+        return relevantSectors.every(sid => o.sectorStatus?.[sid] === "done");
       })
-      .sort((a, b) => b.createdAt - a.createdAt);
-  }, [orders, mySectorIds, hoursBack, now]);
+      .sort((a, b) => (b.finishedAt ?? b.createdAt) - (a.finishedAt ?? a.createdAt));
+  }, [fetchedOrders, mySectorIds]);
 
   const waiters = useMemo(() => {
     const names = new Set(doneOrders.map(o => o.waiterName).filter(Boolean));
@@ -73,6 +94,7 @@ export default function BartenderHistoryScreen({ orders, mySectorIds, sectors, C
     setSelectedWaiter(null);
   };
 
+  const now = Date.now();
   const isDark = C.bg === "#0D0D0F";
 
   return (
@@ -144,6 +166,9 @@ export default function BartenderHistoryScreen({ orders, mySectorIds, sectors, C
       </View>
 
       {/* ── LIST ── */}
+      {loading ? (
+        <ActivityIndicator size="large" color="#0E7C86" style={{ marginTop: 40 }} />
+      ) : (
       <ScrollView
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
@@ -181,8 +206,7 @@ export default function BartenderHistoryScreen({ orders, mySectorIds, sectors, C
             );
           })
         )}
-      </ScrollView>
-    </View>
+      </ScrollView>      )}    </View>
   );
 }
 
