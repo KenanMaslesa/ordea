@@ -2,6 +2,7 @@ import { db, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Dimensions,
@@ -85,6 +86,7 @@ function EmptyCard({ label }: { label: string }) {
 /* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ HOURLY HEATMAP Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function HourlyHeatmap({ data }: { data: Record<string, number> }) {
   const { darkMode } = useTheme();
+  const { t } = useTranslation();
   const labelColor = darkMode ? "#6B7280" : "#aaa";
   const max = Math.max(...Object.values(data).map(Number), 1);
   const cellW = Math.floor((SW - 64) / 24) - 2;
@@ -105,8 +107,8 @@ function HourlyHeatmap({ data }: { data: Record<string, number> }) {
         })}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-        <Text style={{ fontSize: 10, color: labelColor }}>Manje guÃ…Â¾ve</Text>
-        <Text style={{ fontSize: 10, color: labelColor }}>ViÃ…Â¡e guÃ…Â¾ve</Text>
+        <Text style={{ fontSize: 10, color: labelColor }}>{t("admin.lessBusy")}</Text>
+        <Text style={{ fontSize: 10, color: labelColor }}>{t("admin.moreBusy")}</Text>
       </View>
     </View>
   );
@@ -142,6 +144,7 @@ function TrendChart({ daily }: { daily: DayStats[] }) {
 /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â MAIN Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 export default function AdminDashboard({ placeId, onMenuPress }: Props) {
   const { darkMode, primaryColor } = useTheme();
+  const { t } = useTranslation();
 
   const D = darkMode ? {
     root: "#111827",
@@ -267,7 +270,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
   const maxWaiter = topWaiters[0]?.[1] ?? 1;
   const maxRegion = topRegions[0]?.[1] ?? 1;
 
-  const periodLabel = period === "today" ? "juÃ„Âer" : period === "week" ? "proÃ…Â¡lih 7 dana" : "proÃ…Â¡lih 30 dana";
+  const periodLabel = period === "today" ? t("admin.periodYesterday") : period === "week" ? t("admin.periodWeek") : t("admin.periodMonth");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: D.root }}>
@@ -287,7 +290,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         {(["today", "week", "month"] as Period[]).map(p => (
           <Pressable key={p} onPress={() => setPeriod(p)} style={[styles.periodBtn, { borderColor: period === p ? primaryColor : D.periodBtnBorder }, period === p && styles.periodBtnActive]}>
             <Text style={[styles.periodText, { color: period === p ? "#fff" : D.periodText }]}>
-              {p === "today" ? "Danas" : p === "week" ? "7 dana" : "30 dana"}
+              {p === "today" ? t("admin.today") : p === "week" ? t("admin.week") : t("admin.month")}
             </Text>
           </Pressable>
         ))}
@@ -304,38 +307,38 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         <View style={styles.kpiRow}>
           <View style={[styles.kpiCard, { backgroundColor: primaryColor }]}>
             <Text style={[styles.kpiValue, { color: "#fff" }]}>{(stats?.revenue ?? 0).toFixed(2)}</Text>
-            <Text style={[styles.kpiLabel, { color: "rgba(255,255,255,0.7)" }]}>KM prihod</Text>
+            <Text style={[styles.kpiLabel, { color: "rgba(255,255,255,0.7)" }]}>{t("admin.revenue")}</Text>
             {revDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={revDiff} /></View>}
           </View>
           <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
             <Text style={[styles.kpiValue, { color: primaryColor }]}>{stats?.ordersCount ?? 0}</Text>
-            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>NarudÃ…Â¾bi</Text>
+            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.ordersCount")}</Text>
             {ordersDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={ordersDiff} /></View>}
           </View>
           <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
             <Text style={[styles.kpiValue, { color: primaryColor }]}>
               {stats && stats.ordersCount > 0 ? (stats.revenue / stats.ordersCount).toFixed(2) : "Ã¢â‚¬â€"}
             </Text>
-            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Pros. KM</Text>
+            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.avgKm")}</Text>
           </View>
         </View>
         <View style={styles.kpiRow}>
           {avgCompletion && (
             <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
               <Text style={[styles.kpiValue, { color: primaryColor, fontSize: 16 }]}>{avgCompletion}</Text>
-              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Pros. izrada</Text>
+              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.avgTime")}</Text>
             </View>
           )}
           {cancellationRate !== null && Number(cancellationRate) > 0 && (
             <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: darkMode ? "#7F1D1D" : "#fee2e2" }]}>
               <Text style={[styles.kpiValue, { color: "#ef4444" }]}>{cancellationRate}%</Text>
-              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Otkazano</Text>
+              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.cancelled")}</Text>
             </View>
           )}
           {stats?.cancelledCount ? (
             <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: darkMode ? "#78350F" : "#fef9c3" }]}>
               <Text style={[styles.kpiValue, { color: "#ca8a04", fontSize: 18 }]}>{stats.cancelledCount}</Text>
-              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Otkazane</Text>
+              <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>{t("admin.cancelledOrders")}</Text>
             </View>
           ) : null}
         </View>
@@ -344,7 +347,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           <View style={[styles.card, { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, backgroundColor: D.card, borderColor: D.cardBorder }]}>
             <Ionicons name="analytics-outline" size={18} color={primaryColor} />
             <Text style={{ fontSize: 12, color: D.analyticsText, flex: 1 }}>
-              Prihod {revDiff !== null && revDiff >= 0 ? "veÃ„â€¡i" : "manji"} za{" "}
+              Prihod {revDiff !== null && revDiff >= 0 ? t("admin.revenueUp") : t("admin.revenueDown")} za{" "}
               <Text style={{ fontWeight: "700" }}>{Math.abs(revDiff ?? 0)}%</Text> u odnosu na {periodLabel}
             </Text>
           </View>
@@ -353,20 +356,20 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         {/* Ã¢â€â‚¬Ã¢â€â‚¬ TREND Ã¢â€â‚¬Ã¢â€â‚¬ */}
         {period !== "today" && dailyStats.length > 0 && (
           <>
-            <SectionTitle title="Trend prihoda" sub={`zadnjih ${dailyStats.length} dana`} />
+            <SectionTitle title={t("admin.trendRevenue")} sub={t("admin.trendDays", { n: dailyStats.length })} />
             <TrendChart daily={dailyStats} />
           </>
         )}
 
         {/* Ã¢â€â‚¬Ã¢â€â‚¬ HOURLY HEATMAP Ã¢â€â‚¬Ã¢â€â‚¬ */}
-        <SectionTitle title="GuÃ…Â¾va po satu" />
+        <SectionTitle title={t("admin.hourlyBusy")} />
         {stats && Object.keys(stats.hourlyOrderCount).length > 0
           ? <HourlyHeatmap data={stats.hourlyOrderCount} />
-          : <EmptyCard label="Nema podataka za ovaj period" />
+          : <EmptyCard label={t("admin.noDataPeriod")} />
         }
 
         {/* Ã¢â€â‚¬Ã¢â€â‚¬ TOP ITEMS Ã¢â€â‚¬Ã¢â€â‚¬ */}
-        <SectionTitle title="Top artikli" sub="po koliÃ„Âini" />
+        <SectionTitle title={t("admin.topItems")} sub={t("admin.byQuantity")} />
         {topItems.length > 0 ? (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topItems.map(([name, qty], i) => (
@@ -382,10 +385,10 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
               </View>
             ))}
           </View>
-        ) : <EmptyCard label="Nema prodatih artikala" />}
+        ) : <EmptyCard label={t("admin.noSoldItems")} />}
 
         {/* Ã¢â€â‚¬Ã¢â€â‚¬ KATEGORIJE Ã¢â€â‚¬Ã¢â€â‚¬ */}
-        <SectionTitle title="Prihod po kategorijama" />
+        <SectionTitle title={t("admin.categoryRevenue")} />
         {topCategories.length > 0 ? (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topCategories.map(([cat, rev], i) => {
@@ -397,7 +400,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                       <Text style={[styles.rowName, { color: D.rowName }]}>{cat}</Text>
                       <View style={{ alignItems: "flex-end" }}>
                         <Text style={styles.rowVal}>{rev.toFixed(2)} KM</Text>
-                        <Text style={{ fontSize: 10, color: D.sub }}>{count} kom</Text>
+                        <Text style={{ fontSize: 10, color: D.sub }}>{count} {t("admin.kom")}</Text>
                       </View>
                     </View>
                     <MiniBar value={rev} max={maxCat} />
@@ -406,10 +409,10 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
               );
             })}
           </View>
-        ) : <EmptyCard label="Nema podataka" />}
+        ) : <EmptyCard label={t("admin.noData")} />}
 
-        {/* Ã¢â€â‚¬Ã¢â€â‚¬ KONOBARI Ã¢â€â‚¬Ã¢â€â‚¬ */}
-        <SectionTitle title="Konobari" sub="rang lista" />
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ KONOBARI Ã¢â€â‚¬Ã¢â€â‚¬ */}
+        <SectionTitle title={t("admin.waiters")} sub={t("admin.rankList")} />
         {topWaiters.length > 0 ? (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topWaiters.map(([name, rev], i) => {
@@ -427,8 +430,8 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                     </View>
                     <MiniBar value={rev} max={maxWaiter} />
                     <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
-                      <Text style={[styles.sub, { color: D.sub }]}>{orders} narudÃ…Â¾bi</Text>
-                      <Text style={[styles.sub, { color: D.sub }]}>Pros. {avgVal} KM</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{t("admin.ordersNum", { n: orders })}</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{t("admin.avgKmVal", { val: avgVal })}</Text>
                       {avgMs > 0 && <Text style={[styles.sub, { color: D.sub }]}>Ã¢ÂÂ± {fmtMs(avgMs)}</Text>}
                     </View>
                   </View>
@@ -436,12 +439,12 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
               );
             })}
           </View>
-        ) : <EmptyCard label="Nema podataka" />}
+        ) : <EmptyCard label={t("admin.noData")} />}
 
-        {/* Ã¢â€â‚¬Ã¢â€â‚¬ ZONE / REGIJE Ã¢â€â‚¬Ã¢â€â‚¬ */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ ZONE / REGIJE Ã¢â€â‚¬Ã¢â€â‚¬ */}
         {topRegions.length > 0 && (
           <>
-            <SectionTitle title="Zone / Regije" sub="po prihodu" />
+            <SectionTitle title={t("admin.zoneRevenue")} sub={t("admin.byRevenue")} />
             <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
               {topRegions.map(([region, rev], i) => {
                 const count = stats?.regionOrderCount?.[region] ?? 0;
@@ -454,7 +457,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                         <Text style={styles.rowVal}>{rev.toFixed(2)} KM</Text>
                       </View>
                       <MiniBar value={rev} max={maxRegion} />
-                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudÃ…Â¾bi</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{t("admin.ordersNum", { n: count })}</Text>
                     </View>
                   </View>
                 );
@@ -466,7 +469,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         {/* Ã¢â€â‚¬Ã¢â€â‚¬ SEKTORI Ã¢â€â‚¬Ã¢â€â‚¬ */}
         {sectorEntries.length > 0 && (
           <>
-            <SectionTitle title="Sektori" sub="prosjeÃ„Âno vrijeme izrade" />
+            <SectionTitle title={t("admin.sectorActivity")} sub={t("admin.avgTime")} />
             <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
               {sectorEntries.map(([sectorId, count], i) => {
                 const totalMs = stats?.sectorTotalCompletionMs?.[sectorId] ?? 0;
@@ -485,7 +488,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                           </Text>
                         )}
                       </View>
-                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudÃ…Â¾bi obraÃ„â€˜eno</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{t("admin.ordersNum", { n: count })} obrađeno</Text>
                     </View>
                   </View>
                 );
@@ -497,8 +500,8 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         {!stats?.ordersCount && !loading && (
           <View style={{ alignItems: "center", marginTop: 32 }}>
             <Ionicons name="bar-chart-outline" size={48} color={D.emptyIcon} />
-            <Text style={{ color: D.emptyTitle, marginTop: 8, fontSize: 14 }}>Nema zavrÃ…Â¡enih narudÃ…Â¾bi za ovaj period</Text>
-            <Text style={{ color: D.emptySubtitle, fontSize: 12, marginTop: 4 }}>Statistika se puni automatski kako narudÃ…Â¾be budu zavrÃ…Â¡ene</Text>
+            <Text style={{ color: D.emptyTitle, marginTop: 8, fontSize: 14 }}>{t("admin.noDataPeriod")}</Text>
+            <Text style={{ color: D.emptySubtitle, fontSize: 12, marginTop: 4 }}>{t("admin.statsAutoFill") ?? "Statistics fill automatically as orders are completed"}</Text>
           </View>
         )}
       </ScrollView>

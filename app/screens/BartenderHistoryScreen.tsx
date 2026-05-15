@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     Pressable,
@@ -42,6 +43,7 @@ export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, 
   const [fetchedOrders, setFetchedOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const styles = useMemo(() => makeStyles(C), [C]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -106,16 +108,16 @@ export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, 
         <Pressable onPress={onClose} hitSlop={12}>
           <Ionicons name="arrow-back" size={22} color={C.textMuted} />
         </Pressable>
-        <Text style={styles.title}>Historija</Text>
+        <Text style={styles.title}>{t("bartender.history")}</Text>
         <View style={styles.countBadge}>
           <Text style={styles.countNum}>{filteredOrders.length}</Text>
-          <Text style={styles.countLabel}>završenih</Text>
+          <Text style={styles.countLabel}>{t("bartender.finished")}</Text>
         </View>
       </View>
 
       {/* ── HOURS FILTER ── */}
       <View style={styles.filterRow}>
-        <Text style={styles.filterLabel}>Zadnjih:</Text>
+        <Text style={styles.filterLabel}>{t("bartender.last")}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -137,7 +139,7 @@ export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, 
 
       {/* ── WAITER FILTER ── */}
       <View style={styles.filterRow}>
-        <Text style={styles.filterLabel}>Konobar:</Text>
+        <Text style={styles.filterLabel}>{t("bartender.waiterFilter")}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -148,7 +150,7 @@ export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, 
             style={[styles.chip, selectedWaiter === null && styles.chipActive]}
           >
             <Text style={[styles.chipText, selectedWaiter === null && styles.chipTextActive]}>
-              Svi
+              {t("bartender.all")}
             </Text>
           </Pressable>
           {waiters.map(name => (
@@ -176,9 +178,11 @@ export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, 
         {filteredOrders.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="time-outline" size={52} color={C.border} />
-            <Text style={styles.emptyTitle}>Nema završenih</Text>
+            <Text style={styles.emptyTitle}>{t("bartender.noFinished")}</Text>
             <Text style={styles.emptySub}>
-              {selectedWaiter ? `za ${selectedWaiter} u zadnjih ${hoursBack}h` : `u zadnjih ${hoursBack}h`}
+              {selectedWaiter
+                ? t("bartender.noFinishedWaiterHint", { waiter: selectedWaiter, hours: hoursBack })
+                : t("bartender.noFinishedHint", { hours: hoursBack })}
             </Text>
           </View>
         ) : (

@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Modal,
   Pressable,
@@ -273,10 +274,11 @@ export default function Bartender() {
   /* ================= UI ================= */
 
   const styles = useMemo(() => makeStyles(C, darkMode, primaryColor), [C, darkMode, primaryColor]);
+  const { t } = useTranslation();
 
   const headerLabel = mySectors.length > 0
     ? mySectors.map(s => s.name).join(" + ")
-    : "ŠANK";
+    : t("bartender.defaultStation");
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -300,7 +302,7 @@ export default function Bartender() {
         </Pressable>
         <View style={[styles.countBadge, { marginLeft: 8 }]}>
           <Text style={styles.countNum}>{visibleOrders.length}</Text>
-          <Text style={styles.countLabel}>aktivnih</Text>
+          <Text style={styles.countLabel}>{t("bartender.active")}</Text>
         </View>
       </View>
 
@@ -310,8 +312,8 @@ export default function Bartender() {
           <Ionicons name="wifi-outline" size={15} color="#FFFFFF" />
           <Text style={styles.offlineBannerText}>
             {pendingOfflineDoneCount > 0
-              ? `Bez konekcije — ${pendingOfflineDoneCount} narudžba čeka na završavanje`
-              : "Bez konekcije — podaci mogu biti zastarjeli"}
+              ? t("bartender.noConnectionPending", { count: pendingOfflineDoneCount })
+              : t("bartender.noConnection")}
           </Text>
         </View>
       )}
@@ -322,8 +324,8 @@ export default function Bartender() {
           <Ionicons name="checkmark-circle-outline" size={15} color="#FFFFFF" />
           <Text style={styles.offlineBannerText}>
             {reconnectedCount > 0
-              ? `Ponovo online — ${reconnectedCount} narudžba uspješno označeno kao završeno ✓`
-              : "Ponovo online ✓"}
+              ? t("bartender.backOnlineSent", { count: reconnectedCount })
+              : t("bartender.backOnline")}
           </Text>
         </View>
       )}
@@ -355,8 +357,8 @@ export default function Bartender() {
         {visibleOrders.length === 0 && (
           <View style={styles.empty}>
             <Ionicons name="checkmark-circle-outline" size={56} color={C.border} />
-            <Text style={styles.emptyTitle}>Sve je gotovo</Text>
-            <Text style={styles.emptySub}>Nema aktivnih narudžbi</Text>
+            <Text style={styles.emptyTitle}>{t("bartender.allDone")}</Text>
+            <Text style={styles.emptySub}>{t("bartender.noActiveOrders")}</Text>
           </View>
         )}
       </ScrollView>
@@ -390,16 +392,16 @@ export default function Bartender() {
             <View style={[styles.modalIcon, { backgroundColor: C.modalIconBg, borderColor: C.modalIconBorder }]}>
               <Ionicons name="volume-high" size={28} color={C.accent} />
             </View>
-            <Text style={[styles.modalTitle, { color: C.text }]}>Zvuk obavijesti</Text>
+            <Text style={[styles.modalTitle, { color: C.text }]}>{t("bartender.enableAudio")}</Text>
             <Text style={[styles.modalBody, { color: C.textSub }]}>
-              Omogući zvuk da odmah reagujete na nove narudžbe.
+              {t("bartender.enableAudioDesc")}
             </Text>
             <Pressable
               style={({ pressed }) => [styles.doneBtn, { marginTop: 4, alignSelf: "stretch" }, pressed && styles.doneBtnPressed]}
               onPress={unlockAudio}
             >
               <Ionicons name="volume-high" size={18} color={C.white} />
-              <Text style={styles.doneBtnText}>Omogući zvuk</Text>
+              <Text style={styles.doneBtnText}>{t("bartender.allowAudio")}</Text>
             </Pressable>
           </View>
         </View>

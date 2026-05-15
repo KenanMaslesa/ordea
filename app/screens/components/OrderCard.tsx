@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Order, Sector } from "../../types/order.types";
 import { AppTheme } from "../../types/theme.types";
@@ -33,6 +34,7 @@ export default function OrderCard({
 }: Props) {
   const [otherCollapsed, setOtherCollapsed] = useState(true);
   const styles = useMemo(() => makeStyles(C), [C]);
+  const { t } = useTranslation();
 
   const myItems =
     mySectorIds.length > 0
@@ -45,7 +47,7 @@ export default function OrderCard({
       : [];
 
   const grouped = myItems.reduce<Record<string, typeof myItems>>((acc, item) => {
-    const cat = item.category || "Ostalo";
+    const cat = item.category || t("orders.other");
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);
     return acc;
@@ -126,7 +128,7 @@ export default function OrderCard({
               color={C.textMuted}
             />
             <Text style={styles.otherToggleText}>
-              Ostale stavke ({otherItems.reduce((s, i) => s + i.qty, 0)})
+              {t("orders.otherItems", { count: otherItems.reduce((s, i) => s + i.qty, 0) })}
             </Text>
           </Pressable>
           {!otherCollapsed &&
@@ -150,7 +152,7 @@ export default function OrderCard({
           onPress={onMarkDone}
         >
           <Ionicons name="checkmark" size={20} color={C.white} />
-          <Text style={styles.doneBtnText}>ZAVRŠI</Text>
+          <Text style={styles.doneBtnText}>{t("orders.finish")}</Text>
         </Pressable>
       )}
     </View>

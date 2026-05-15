@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Animated,
     Modal,
@@ -16,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { getItem, setItem } from "../helper";
+import { useLanguage } from "../hooks/useLanguage";
 import { Sector } from "../types/order.types";
 
 const DRAWER_W = 295;
@@ -50,6 +52,10 @@ export default function SideDrawer({
   const slideAnim = useRef(new Animated.Value(-DRAWER_W)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const { darkMode, setDarkMode, primaryColor } = useTheme();
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage, languages } = useLanguage();
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const currentLang = languages.find(l => l.code === currentLanguage);
 
   const D = darkMode ? {
     drawer: "#1F2937",
@@ -146,11 +152,11 @@ export default function SideDrawer({
   };
 
   const shareApp = () => {
-    Share.share({ message: "Ordea — digitalni sistem narudžbi za ugostiteljstvo. Brža usluga, manje grešaka." });
+    Share.share({ message: t("drawer.shareMsg") });
   };
 
   const displayName = role === "admin" ? (adminName || "") : workerName;
-  const roleLabel = role === "admin" ? "Admin" : role === "waiter" ? "Konobar" : "Šanker";
+  const roleLabel = role === "admin" ? t("drawer.admin") : role === "waiter" ? t("drawer.waiter") : t("drawer.bartender");
 
   return (
     <Modal
@@ -189,7 +195,7 @@ export default function SideDrawer({
                     value={nameInput}
                     onChangeText={setNameInput}
                     style={[styles.nameInput, { borderBottomColor: D.nameInputBorder, color: D.nameInputText }]}
-                    placeholder="Tvoje ime"
+                    placeholder={t("drawer.yourName")}
                     placeholderTextColor={D.nameInputPlaceholder}
                     autoFocus
                     returnKeyType="done"
@@ -206,7 +212,7 @@ export default function SideDrawer({
                   disabled={role !== "admin"}
                 >
                   <Text style={[styles.profileName, { color: D.nameText }]} numberOfLines={1}>
-                    {displayName || (role === "admin" ? "Postavi ime" : "")}
+                    {displayName || (role === "admin" ? t("drawer.setName") : "")}
                   </Text>
                   {role === "admin" && (
                     <Ionicons name="pencil-outline" size={13} color="#A1A1AA" style={{ marginLeft: 5 }} />
@@ -228,20 +234,20 @@ export default function SideDrawer({
                     <View style={[styles.menuIcon, { backgroundColor: darkMode ? primaryColor : primaryColor }]}>
                       <Ionicons name="grid-outline" size={18} color="#fff" />
                     </View>
-                    <Text style={[styles.menuItemText, { color: darkMode ? "#5EEAD4" : primaryColor, fontWeight: "700" }]}>Admin panel</Text>
+                    <Text style={[styles.menuItemText, { color: darkMode ? "#5EEAD4" : primaryColor, fontWeight: "700" }]}>{t("drawer.adminPanel")}</Text>
                     <Ionicons name="chevron-forward" size={15} color={darkMode ? "#5EEAD4" : primaryColor} />
                   </Pressable>
                   <View style={[styles.divider, { backgroundColor: D.divider }]} />
                 </>
               )}
 
-              <Text style={styles.sectionLabel}>RADI KAO</Text>
+              <Text style={styles.sectionLabel}>{t("drawer.workAs")}</Text>
 
               <Pressable style={styles.menuItem} onPress={goWaiter}>
                 <View style={[styles.menuIcon, { backgroundColor: "#ECFDF5" }]}>
                   <Ionicons name="person-outline" size={18} color="#16A34A" />
                 </View>
-                <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Konobar</Text>
+                <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.waiter")}</Text>
                 <Ionicons name="chevron-forward" size={15} color="#D4D4D8" />
               </Pressable>
 
@@ -271,14 +277,14 @@ export default function SideDrawer({
           )}
 
           {/* Common options */}
-          <Text style={[styles.sectionLabel, { color: D.sectionLabel }]}>OPCIJE</Text>
+          <Text style={[styles.sectionLabel, { color: D.sectionLabel }]}>{t("drawer.options")}</Text>
 
           {/* Dark mode toggle */}
           <View style={styles.menuItem}>
             <View style={[styles.menuIcon, { backgroundColor: darkMode ? "#374151" : "#F1F5F9" }]}>
               <Ionicons name={darkMode ? "moon" : "sunny-outline"} size={18} color={darkMode ? "#93C5FD" : "#F59E0B"} />
             </View>
-            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Dark mode</Text>
+            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.darkMode")}</Text>
             <Switch
               value={darkMode}
               onValueChange={setDarkMode}
@@ -292,14 +298,14 @@ export default function SideDrawer({
               <View style={[styles.menuIcon, { backgroundColor: "#F0FDFA" }]}>
                 <Ionicons name="settings-outline" size={18} color={primaryColor} />
               </View>
-              <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Postavke</Text>
+              <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.settings")}</Text>
             </Pressable>
           )}
           <Pressable style={styles.menuItem} onPress={shareApp}>
             <View style={[styles.menuIcon, { backgroundColor: "#F5F3FF" }]}>
               <Ionicons name="share-social-outline" size={18} color="#7C3AED" />
             </View>
-            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Podijeli aplikaciju</Text>
+            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.share")}</Text>
           </Pressable>
 
           <Pressable
@@ -311,7 +317,7 @@ export default function SideDrawer({
             <View style={[styles.menuIcon, { backgroundColor: "#FFFBEB" }]}>
               <Ionicons name="star-outline" size={18} color="#D97706" />
             </View>
-            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Ocijeni aplikaciju</Text>
+            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.rateApp")}</Text>
           </Pressable>
 
           <Pressable
@@ -323,7 +329,7 @@ export default function SideDrawer({
             <View style={[styles.menuIcon, { backgroundColor: "#F0FDF4" }]}>
               <Ionicons name="bulb-outline" size={18} color="#16A34A" />
             </View>
-            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Predloži funkcionalnost</Text>
+            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.suggest")}</Text>
           </Pressable>
 
           <Pressable
@@ -335,8 +341,37 @@ export default function SideDrawer({
             <View style={[styles.menuIcon, { backgroundColor: "#FEF2F2" }]}>
               <Ionicons name="bug-outline" size={18} color="#DC2626" />
             </View>
-            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Prijavi grešku</Text>
+            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.reportBug")}</Text>
           </Pressable>
+
+          {/* Language switcher */}
+          <View style={[styles.divider, { backgroundColor: D.divider, marginVertical: 8 }]} />
+          <Pressable style={styles.menuItem} onPress={() => setShowLangPicker(v => !v)}>
+            <View style={[styles.menuIcon, { backgroundColor: darkMode ? "#374151" : "#F0F9FF" }]}>
+              <Text style={{ fontSize: 16 }}>{currentLang?.flag ?? "🌐"}</Text>
+            </View>
+            <Text style={[styles.menuItemText, { color: D.menuItemText }]}>{t("drawer.language")}</Text>
+            <Text style={{ fontSize: 13, color: primaryColor, fontWeight: "600", marginRight: 4 }}>{currentLang?.nativeLabel}</Text>
+            <Ionicons name={showLangPicker ? "chevron-up" : "chevron-down"} size={15} color="#D4D4D8" />
+          </Pressable>
+          {showLangPicker && (
+            <View style={{ marginBottom: 4 }}>
+              {languages.map(lang => {
+                const active = currentLanguage === lang.code;
+                return (
+                  <Pressable
+                    key={lang.code}
+                    style={[styles.menuItem, { paddingLeft: 52 }, active && { backgroundColor: darkMode ? primaryColor + "25" : primaryColor + "12" }]}
+                    onPress={() => { changeLanguage(lang.code); setShowLangPicker(false); }}
+                  >
+                    <Text style={{ fontSize: 16, marginRight: 10 }}>{lang.flag}</Text>
+                    <Text style={[styles.menuItemText, { color: active ? primaryColor : D.menuItemText, fontWeight: active ? "700" : "400" }]}>{lang.nativeLabel}</Text>
+                    {active && <Ionicons name="checkmark" size={16} color={primaryColor} style={{ marginLeft: "auto" }} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
 
         </ScrollView>
       </Animated.View>

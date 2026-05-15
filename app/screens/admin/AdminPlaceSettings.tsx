@@ -4,6 +4,7 @@ import * as Clipboard from "expo-clipboard";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import QRCodeLib from "qrcode";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Animated,
@@ -66,6 +67,7 @@ const MODE_OPTIONS: { value: LocationMode; label: string; desc: string }[] = [
 
 export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
   const { darkMode, primaryColor, setPrimaryColor } = useTheme();
+  const { t } = useTranslation();
 
   const D = darkMode ? {
     root: "#111827",
@@ -218,7 +220,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
       setDirty(false);
       showSavedBanner();
     } catch {
-      Alert.alert("Greška", "Nije moguće sačuvati postavke.");
+      Alert.alert(t("common.error"), t("adminSettings.errorSave"));
     } finally {
       setSaving(false);
     }
@@ -266,20 +268,20 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
             <Ionicons name="menu" size={20} color={primaryColor} />
           </View>
         </Pressable>
-        <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: D.headerTitle, letterSpacing: -0.3 }}>Postavke</Text>
+        <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: D.headerTitle, letterSpacing: -0.3 }}>{t("adminSettings.title")}</Text>
         <View style={{ width: 44 }} />
       </View>
       {/* Unsaved changes banner */}
       {dirty && (
         <View style={[styles.unsavedBanner, { backgroundColor: D.unsavedBannerBg, borderBottomColor: D.unsavedBannerBorder }]}>
-          <Text style={[styles.unsavedBannerText, { color: D.unsavedBannerText }]}>⚠️ Imate nespremljene promjene</Text>
+          <Text style={[styles.unsavedBannerText, { color: D.unsavedBannerText }]}>{t("adminSettings.unsavedChanges")}</Text>
         </View>
       )}
 
       {/* Success banner */}
       {savedMsg && (
         <Animated.View style={[styles.savedBanner, { opacity: savedOpacity }]}>
-          <Text style={styles.savedBannerText}>✓ Postavke su uspješno snimljene</Text>
+          <Text style={styles.savedBannerText}>{t("adminSettings.savedSuccess")}</Text>
         </Animated.View>
       )}
 
@@ -288,13 +290,13 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
         {/* Osnovne informacije */}
         {place && (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
-            <Text style={[styles.cardTitle, { color: D.cardTitle }]}>Objekat</Text>
+            <Text style={[styles.cardTitle, { color: D.cardTitle }]}>{t("adminSettings.placeSection")}</Text>
             <Text style={[styles.infoRow, { color: D.infoText }]}>
-              <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Naziv: </Text>{place.name}
+              <Text style={[styles.infoLabel, { color: D.infoLabel }]}>{t("adminSettings.nameLabel")}</Text>{place.name}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 }}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Join kod</Text>
+                <Text style={[styles.infoLabel, { color: D.infoLabel }]}>{t("adminSettings.joinCode")}</Text>
                 <Text style={styles.joinCode}>{place.joinCode}</Text>
               </View>
               <Pressable
@@ -313,7 +315,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                   } else if (Platform.OS === "web") {
                     // Fallback za desktop browser koji ne podržava Web Share API
                     await Clipboard.setStringAsync(joinUrl);
-                    Alert.alert("Kopirano!", "Link je kopiran. Pošalji ga radnicima.");
+                    Alert.alert(t("adminSettings.copiedLink"), t("adminSettings.copiedLinkMsg"));
                   } else {
                     await Share.share({ message, url: joinUrl });
                   }
@@ -327,7 +329,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
               >
                 <Ionicons name="share-social-outline" size={16} color={primaryColor} />
                 <Text style={{ fontSize: 13, fontWeight: "600", color: primaryColor }}>
-                  Podijeli
+                  {t("adminSettings.share")}
                 </Text>
               </Pressable>
             </View>
@@ -347,7 +349,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
             >
               <Ionicons name="qr-code-outline" size={18} color={qrVisible ? primaryColor : D.sectionHint} />
               <Text style={{ flex: 1, fontSize: 14, fontWeight: "600", color: qrVisible ? primaryColor : D.infoText }}>
-                QR kod za radnike
+                {t("adminSettings.qrCode")}
               </Text>
               <Ionicons name={qrVisible ? "chevron-up" : "chevron-down"} size={16} color={D.sectionHint} />
             </Pressable>
@@ -414,7 +416,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                       }}
                     >
                       <Ionicons name="print-outline" size={16} color={D.infoText} />
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: D.infoText }}>Printaj QR kod</Text>
+                      <Text style={{ fontSize: 13, fontWeight: "600", color: D.infoText }}>{t("adminSettings.printQr") ?? "Print QR code"}</Text>
                     </Pressable>
                   )}
                 </View>
@@ -424,12 +426,25 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
         )}
 
         {/* Mod lokacije */}
-        <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>Izbor lokacije</Text>
+        <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>{t("adminSettings.locationTitle") ?? "Location selection"}</Text>
         <Text style={[styles.sectionHint, { color: D.sectionHint }]}>
-          Određuje šta konobar bira prije slanja narudžbe.
+          {t("adminSettings.locationHint") ?? "Determines what the waiter selects before sending an order."}
         </Text>
 
-        {MODE_OPTIONS.map(opt => (
+        {MODE_OPTIONS.map(opt => {
+          const modeLabels: Record<string, string> = {
+            none: t("adminSettings.locationNone"),
+            zones: t("adminSettings.locationZones"),
+            tables: t("adminSettings.locationTables"),
+            zones_tables: t("adminSettings.locationZonesTables"),
+          };
+          const modeDescs: Record<string, string> = {
+            none: t("adminSettings.locationNoneDesc"),
+            zones: t("adminSettings.locationZonesDesc"),
+            tables: t("adminSettings.locationTablesDesc"),
+            zones_tables: t("adminSettings.locationZonesTablesDesc"),
+          };
+          return (
           <Pressable
             key={opt.value}
             onPress={() => { setLocationMode(opt.value); setDirty(true); }}
@@ -440,21 +455,22 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.modeLabel, { color: locationMode === opt.value ? primaryColor : D.modeLabel }]}>
-                {opt.label}
+                {modeLabels[opt.value] ?? opt.label}
               </Text>
-              <Text style={[styles.modeDesc, { color: D.modeDesc }]}>{opt.desc}</Text>
+              <Text style={[styles.modeDesc, { color: D.modeDesc }]}>{modeDescs[opt.value] ?? opt.desc}</Text>
             </View>
           </Pressable>
-        ))}
+          );
+        })}
 
         {/* Zone */}
         {showZones && (
           <>
             <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>
-              {showPerZoneTables ? "Zone i stolovi" : "Zone"}
+              {showPerZoneTables ? t("adminSettings.zonesAndTables") ?? "Zones and tables" : t("adminSettings.zones") ?? "Zones"}
             </Text>
             {showPerZoneTables && (
-              <Text style={[styles.sectionHint, { color: D.sectionHint }]}>Unesite naziv zone i broj stolova u toj zoni.</Text>
+              <Text style={[styles.sectionHint, { color: D.sectionHint }]}>{t("adminSettings.zonesHint") ?? "Enter zone name and number of tables in that zone."}</Text>
             )}
             {zones.map((z, i) => (
               <View key={i} style={[styles.zoneCard, { backgroundColor: D.zoneCard, borderColor: D.zoneCardBorder }]}>
@@ -463,12 +479,12 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                     style={[styles.input, { flex: 1, marginBottom: 0, backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
                     value={z.name}
                     onChangeText={v => updateZone(i, "name", v)}
-                    placeholder={`Zona ${i + 1} (npr. Sala, Terasa)`}
+                    placeholder={`${t("adminSettings.zonePlaceholder") ?? "Zone"} ${i + 1}`}
                     placeholderTextColor={D.placeholder}
                   />
                   {showPerZoneTables && (
                     <View style={[styles.tableCountBox, { backgroundColor: D.tableCountBox, borderColor: D.tableCountBorder }]}>
-                      <Text style={styles.tableCountLabel}>Stolovi</Text>
+                      <Text style={styles.tableCountLabel}>{t("adminSettings.tables") ?? "Tables"}</Text>
                       <TextInput
                         style={[styles.tableCountInput]}
                         value={z.tableCount > 0 ? String(z.tableCount) : ""}
@@ -491,7 +507,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
               </View>
             ))}
             <Pressable onPress={addZone} style={styles.addBtn}>
-              <Text style={styles.addBtnText}>+ Dodaj zonu</Text>
+              <Text style={styles.addBtnText}>{t("adminSettings.addZone")}</Text>
             </Pressable>
           </>
         )}
@@ -499,13 +515,13 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
         {/* Globalni stolovi (samo "tables" mod) */}
         {showGlobalTables && (
           <>
-            <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>Broj stolova</Text>
+            <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>{t("adminSettings.tablesCount") ?? "Number of tables"}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
               value={tableCount}
               onChangeText={v => { setTableCount(v); setDirty(true); }}
               keyboardType="number-pad"
-              placeholder="npr. 20"
+              placeholder={t("adminSettings.tablesPlaceholder") ?? "e.g. 20"}
               placeholderTextColor={D.placeholder}
             />
             {parseInt(tableCount) > 0 && (
@@ -518,9 +534,9 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
         )}
 
         {/* Sektori */}
-        <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>Sektori</Text>
+        <Text style={[styles.sectionTitle, { color: D.sectionTitle }]}>{t("adminSettings.sectors")}</Text>
         <Text style={[styles.sectionHint, { color: D.sectionHint }]}>
-          Definiraju gdje ide svaka stavka menija (Šank, Kuhinja...). Osoblje bira sektor pri prijavi.
+          {t("adminSettings.sectorsHint")}
         </Text>
         {sectors.map((s, i) => (
           <View key={s.id}>
@@ -539,7 +555,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                 style={[styles.input, { flex: 1, backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
                 value={s.name}
                 onChangeText={v => updateSector(i, "name", v)}
-                placeholder={`Sektor ${i + 1} (npr. Šank, Kuhinja)`}
+                placeholder={`${t("adminSettings.sectorPlaceholder") ?? "Station"} ${i + 1}`}
                 placeholderTextColor={D.placeholder}
               />
               <Pressable onPress={() => removeSector(i)} style={styles.removeBtn}>
@@ -577,14 +593,14 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
           </View>
         ))}
         <Pressable onPress={addSector} style={styles.addBtn}>
-          <Text style={styles.addBtnText}>+ Dodaj sektor</Text>
+          <Text style={styles.addBtnText}>{t("adminSettings.addSector")}</Text>
         </Pressable>
 
         {/* â”€â”€ Boja aplikacije â”€â”€ */}
         <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder, marginTop: 20 }]}>
-          <Text style={[styles.cardTitle, { color: D.cardTitle }]}>Boja aplikacije</Text>
+          <Text style={[styles.cardTitle, { color: D.cardTitle }]}>{t("adminSettings.appColor")}</Text>
           <Text style={[styles.sectionHint, { color: D.sectionHint, marginBottom: 14 }]}>
-            Odaberite boju koja odgovara vašem brendu. Promjena je trenutna.
+            {t("adminSettings.appColorHint") ?? "Choose a colour matching your brand. Change is instant."}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {PRESET_COLORS.map(({ hex, label }) => {
@@ -633,7 +649,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
           >
             <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: primaryColor }} />
             <Text style={{ flex: 1, fontSize: 14, fontWeight: "600", color: D.infoText }}>
-              Prilagođena boja
+              {t("adminSettings.customColor") ?? "Custom colour"}
             </Text>
             {!PRESET_COLORS.some(c => c.hex === primaryColor) && (
               <Text style={{ fontSize: 12, fontWeight: "700", color: primaryColor }}>
@@ -661,7 +677,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
               gap: 16,
             }}>
               <Text style={{ fontSize: 17, fontWeight: "700", color: darkMode ? "#F9FAFB" : "#18181B", marginBottom: 4 }}>
-                Odaberi boju
+                {t("adminSettings.selectColor") ?? "Select colour"}
               </Text>
               <ColorPicker
                 value={pendingColor}
@@ -677,7 +693,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                   onPress={() => setColorPickerVisible(false)}
                   style={{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: darkMode ? "#4B5563" : "#D1D5DB", alignItems: "center" }}
                 >
-                  <Text style={{ fontWeight: "600", color: darkMode ? "#E5E7EB" : "#555" }}>Odustani</Text>
+                  <Text style={{ fontWeight: "600", color: darkMode ? "#E5E7EB" : "#555" }}>{t("adminSettings.cancel") ?? "Cancel"}</Text>
                 </Pressable>
                 <Pressable
                   onPress={async () => {
@@ -686,7 +702,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                   }}
                   style={{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: pendingColor, alignItems: "center" }}
                 >
-                  <Text style={{ fontWeight: "700", color: "#fff" }}>Potvrdi</Text>
+                  <Text style={{ fontWeight: "700", color: "#fff" }}>{t("adminSettings.confirm") ?? "Confirm"}</Text>
                 </Pressable>
               </View>
             </View>
@@ -698,7 +714,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
           disabled={saving || !dirty}
           style={[styles.saveBtn, (!dirty || saving) && { opacity: 0.4 }]}
         >
-          <Text style={styles.saveBtnText}>{saving ? "Čuvanje..." : "Sačuvaj sve postavke"}</Text>
+          <Text style={styles.saveBtnText}>{saving ? t("adminSettings.saving") : t("adminSettings.saveChanges")}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

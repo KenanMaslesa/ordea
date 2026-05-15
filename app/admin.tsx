@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { db, placesRoot } from "../firebase";
 import SideDrawer from "./components/SideDrawer";
@@ -21,6 +22,7 @@ export default function AdminScreen() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { darkMode, primaryColor } = useTheme();
+  const { t } = useTranslation();
 
   useEffect(() => {
     getItem("@placeId").then(id => {
@@ -60,13 +62,13 @@ export default function AdminScreen() {
           },
         })}
       >
-        <Tab.Screen name="Dashboard">
+        <Tab.Screen name="Dashboard" options={{ tabBarLabel: t("admin.dashboard") }}>
           {() => <AdminDashboard placeId={placeId} onMenuPress={() => setDrawerOpen(true)} />}
         </Tab.Screen>
-        <Tab.Screen name="Meni">
+        <Tab.Screen name="Meni" options={{ tabBarLabel: t("admin.menu") }}>
           {() => <AdminSettings placeId={placeId} onMenuPress={() => setDrawerOpen(true)} />}
         </Tab.Screen>
-        <Tab.Screen name="Postavke">
+        <Tab.Screen name="Postavke" options={{ tabBarLabel: t("admin.settings") }}>
           {() => <AdminPlaceSettings placeId={placeId} onMenuPress={() => setDrawerOpen(true)} />}
         </Tab.Screen>
       </Tab.Navigator>

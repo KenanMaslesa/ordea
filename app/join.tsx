@@ -2,6 +2,7 @@
 import * as Device from "expo-device";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -69,6 +70,7 @@ export default function JoinScreen() {
   };
 
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
+  const { t } = useTranslation();
 
   const params = useLocalSearchParams<{ code?: string }>();
 
@@ -94,7 +96,7 @@ export default function JoinScreen() {
     try {
       const place = await getPlaceByJoinCode(autoCode.trim());
       if (!place) {
-        return Alert.alert("Greška", "Kod nije pronađen. Provjerite link i pokušajte ponovo.");
+        return Alert.alert(t("common.error"), t("auth.join.errorNotFound"));
       }
       setPlaceId(place.id);
       setPlaceName(place.name);
@@ -102,7 +104,7 @@ export default function JoinScreen() {
       setSelectedSectorIds([]);
       setStep("role");
     } catch {
-      Alert.alert("Greška", "Problem s povezivanjem. Pokušajte ponovo.");
+      Alert.alert(t("common.error"), t("auth.join.errorConnection"));
     } finally {
       setLoading(false);
     }
@@ -110,13 +112,13 @@ export default function JoinScreen() {
 
   const handleCodeSubmit = async () => {
     if (code.trim().length < 4) {
-      return Alert.alert("Greška", "Unesite ispravan kod.");
+      return Alert.alert(t("common.error"), t("auth.join.errorInvalidCode"));
     }
     setLoading(true);
     try {
       const place = await getPlaceByJoinCode(code.trim());
       if (!place) {
-        return Alert.alert("Greška", "Kod nije pronađen. Provjerite i pokušajte ponovo.");
+        return Alert.alert(t("common.error"), t("auth.join.errorNotFound2"));
       }
       setPlaceId(place.id);
       setPlaceName(place.name);
@@ -124,7 +126,7 @@ export default function JoinScreen() {
       setSelectedSectorIds([]);
       setStep("role");
     } catch {
-      Alert.alert("Greška", "Problem s povezivanjem. Pokušajte ponovo.");
+      Alert.alert(t("common.error"), t("auth.join.errorConnection"));
     } finally {
       setLoading(false);
     }
@@ -152,7 +154,7 @@ export default function JoinScreen() {
       await setItem("@sectorIds", JSON.stringify(selectedSectorIds));
       router.replace("/bartender");
     } catch {
-      Alert.alert("Greška", "Problem s čuvanjem podataka.");
+      Alert.alert(t("common.error"), t("auth.join.errorSavingData"));
     } finally {
       setLoading(false);
     }
@@ -160,7 +162,7 @@ export default function JoinScreen() {
 
   const handleFinishWaiter = async () => {
     const trimmed = name.trim();
-    if (!trimmed) return Alert.alert("Greška", "Unesite vaše ime.");
+    if (!trimmed) return Alert.alert(t("common.error"), t("auth.join.errorEnterName"));
     setLoading(true);
     try {
       const existingDeviceId = await getItem("@deviceId");
@@ -175,7 +177,7 @@ export default function JoinScreen() {
       await setItem("@waiterName", trimmed);
       router.replace("/waiter");
     } catch {
-      Alert.alert("Greška", "Problem s čuvanjem podataka.");
+      Alert.alert(t("common.error"), t("auth.join.errorSavingData"));
     } finally {
       setLoading(false);
     }
@@ -191,13 +193,13 @@ export default function JoinScreen() {
         {/* STEP 1 — Join code */}
         {step === "code" && (
           <>
-            <Text style={styles.title}>Pridruži se</Text>
+            <Text style={styles.title}>{t("auth.join.title")}</Text>
             <Text style={[styles.subtitle, { color: D.subtitle }]}>
-              Unesite kod koji vam je dao administrator objekta.
+              {t("auth.join.subtitle")}
             </Text>
             <TextInput
               style={[styles.codeInput, { backgroundColor: D.codeInput, borderColor: D.codeInputBorder, color: D.codeInputText }]}
-              placeholder="npr. AB3X7K"
+              placeholder={t("auth.join.codePlaceholder")}
               placeholderTextColor={D.placeholder}
               value={code}
               onChangeText={v => setCode(v.toUpperCase())}
@@ -210,10 +212,10 @@ export default function JoinScreen() {
               onPress={handleCodeSubmit}
               disabled={loading}
             >
-              <Text style={styles.btnText}>{loading ? "Provjera..." : "Nastavi"}</Text>
+              <Text style={styles.btnText}>{loading ? t("auth.join.checking") : t("auth.join.continue")}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/login")} style={styles.adminLink}>
-              <Text style={[styles.adminLinkText, { color: D.adminLinkText }]}>Admin prijava →</Text>
+              <Text style={[styles.adminLinkText, { color: D.adminLinkText }]}>{t("auth.join.adminLink")}</Text>
             </Pressable>
           </>
         )}
@@ -222,13 +224,13 @@ export default function JoinScreen() {
         {step === "role" && (
           <>
             <Text style={styles.title}>{placeName}</Text>
-            <Text style={[styles.subtitle, { color: D.subtitle }]}>Ko ste?</Text>
+            <Text style={[styles.subtitle, { color: D.subtitle }]}>{t("auth.join.whoAreYou")}</Text>
 
             {/* Konobar — always available */}
             <Pressable style={[styles.roleBtn, { backgroundColor: D.roleBtn, borderColor: D.roleBtnBorder }]} onPress={() => setStep("name")}>
               <Text style={styles.roleIcon}>🙋</Text>
-              <Text style={[styles.roleName, { color: D.roleName }]}>Konobar</Text>
-              <Text style={[styles.roleDesc, { color: D.roleDesc }]}>Kreiram narudžbe za stolove</Text>
+              <Text style={[styles.roleName, { color: D.roleName }]}>{t("auth.join.waiter")}</Text>
+              <Text style={[styles.roleDesc, { color: D.roleDesc }]}>{t("auth.join.waiterDesc")}</Text>
             </Pressable>
 
             {/* Sectors — multi-select */}
@@ -236,7 +238,7 @@ export default function JoinScreen() {
               <>
                 <View style={styles.divider}>
                   <View style={[styles.dividerLine, { backgroundColor: D.dividerLine }]} />
-                  <Text style={[styles.dividerText, { color: D.dividerText }]}>ili — osoblje stanica</Text>
+                  <Text style={[styles.dividerText, { color: D.dividerText }]}>{t("auth.join.orStaff")}</Text>
                   <View style={[styles.dividerLine, { backgroundColor: D.dividerLine }]} />
                 </View>
 
@@ -256,7 +258,7 @@ export default function JoinScreen() {
                       />
                       <Text style={[styles.roleName, { color: D.roleName }, active && { color: "#fff" }]}>{s.name}</Text>
                       <Text style={[styles.roleDesc, { color: D.roleDesc }, active && { color: "#c8f0f3" }]}>
-                        {active ? "✓ Odabrano" : "Tap za odabir"}
+                        {active ? t("auth.join.selected") : t("auth.join.tapToSelect")}
                       </Text>
                     </Pressable>
                   );
@@ -268,20 +270,20 @@ export default function JoinScreen() {
                   disabled={selectedSectorIds.length === 0 || loading}
                 >
                   <Text style={styles.btnText}>
-                    {loading ? "..." : `Počni raditi (${selectedSectorIds.length > 0 ? selectedSectorIds.map(id => placeSectors.find(s => s.id === id)?.name).join(" + ") : "odaberi sektor"})`}
+                    {loading ? "..." : `${t("auth.join.startWorking")} (${selectedSectorIds.length > 0 ? selectedSectorIds.map(id => placeSectors.find(s => s.id === id)?.name).join(" + ") : t("auth.join.selectSector")})`}
                   </Text>
                 </Pressable>
               </>
             ) : (
               <View style={[styles.noSectorsBox, { backgroundColor: D.noSectorsBox, borderColor: D.noSectorsBoxBorder }]}>
                 <Text style={[styles.noSectorsText, { color: D.noSectorsText }]}>
-                  ℹ️ Admin još nije postavio sektore.{"\n"}Ako radite na šanku ili kuhinji, kontaktirajte administratora.
+                  {t("auth.join.noSectors")}
                 </Text>
               </View>
             )}
 
             <Pressable onPress={() => setStep("code")} style={styles.backBtn}>
-              <Text style={[styles.backText, { color: D.backText }]}>← Nazad</Text>
+              <Text style={[styles.backText, { color: D.backText }]}>{t("common.back")}</Text>
             </Pressable>
           </>
         )}
@@ -289,11 +291,11 @@ export default function JoinScreen() {
         {/* STEP 3 — Waiter name */}
         {step === "name" && (
           <>
-            <Text style={styles.title}>Vaše ime</Text>
-            <Text style={[styles.subtitle, { color: D.subtitle }]}>Ovo ime će se prikazivati na narudžbama.</Text>
+            <Text style={styles.title}>{t("auth.join.enterName")}</Text>
+            <Text style={[styles.subtitle, { color: D.subtitle }]}>{t("auth.join.nameSubtitle")}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
-              placeholder="npr. Amina"
+              placeholder={t("auth.join.namePlaceholder")}
               placeholderTextColor={D.placeholder}
               value={name}
               onChangeText={setName}
@@ -304,10 +306,10 @@ export default function JoinScreen() {
               onPress={handleFinishWaiter}
               disabled={loading}
             >
-              <Text style={styles.btnText}>{loading ? "..." : "Počni raditi"}</Text>
+              <Text style={styles.btnText}>{loading ? "..." : t("auth.join.startWorking")}</Text>
             </Pressable>
             <Pressable onPress={() => setStep("role")} style={styles.backBtn}>
-              <Text style={[styles.backText, { color: D.backText }]}>← Nazad</Text>
+              <Text style={[styles.backText, { color: D.backText }]}>{t("common.back")}</Text>
             </Pressable>
           </>
         )}

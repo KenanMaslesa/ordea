@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FlatList,
   Pressable,
@@ -32,6 +33,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
   const { myOrders, timeNow, removeOrder, removeAllDone } = useMyOrders(placeId, waiterId);
   const { primaryColor } = useTheme();
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"pending" | "done">("pending");
 
   const D = {
@@ -84,7 +86,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
 
     const grouped: Record<string, any[]> = {};
     for (const i of order.items) {
-      const cat = i.category || "Ostalo";
+      const cat = i.category || t("orders.other");
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(i);
     }
@@ -120,7 +122,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
             <View style={[styles.timerChip, { backgroundColor: "#dcfce7" }]}>
               <Ionicons name="checkmark-circle-outline" size={13} color="#16a34a" />
               <Text style={[styles.timerText, { color: "#16a34a" }]}>
-                Završeno {formatElapsed(elapsed)} ago
+                {t("orders.completedAgo", { time: formatElapsed(elapsed) })}
               </Text>
             </View>
           )}
@@ -181,7 +183,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
           {!isPending && (
             <Pressable style={styles.removeBtn} onPress={() => removeOrder(order.id)} hitSlop={8}>
               <Ionicons name="trash-outline" size={14} color={D.removeBtnText} />
-              <Text style={[styles.removeBtnText, { color: D.removeBtnText }]}>Ukloni</Text>
+              <Text style={[styles.removeBtnText, { color: D.removeBtnText }]}>{t("orders.remove")}</Text>
             </Pressable>
           )}
         </View>
@@ -194,7 +196,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
       {/* â”€â”€ Header â”€â”€ */}
       <View style={[styles.header, { backgroundColor: D.header, borderBottomColor: D.headerBorder }]}>
         <View style={{ width: 32 }} />
-        <Text style={[styles.headerTitle, { color: D.title }]}>Moje narudžbe</Text>
+        <Text style={[styles.headerTitle, { color: D.title }]}>{t("orders.myOrders")}</Text>
         {onClose ? (
           <Pressable style={[styles.closeBtn, { backgroundColor: D.closeBtn }]} onPress={onClose} hitSlop={10}>
             <Ionicons name="close" size={20} color={D.closeIcon} />
@@ -212,7 +214,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
               onPress={() => setActiveTab(tab)}
             >
               <Text style={[styles.tabLabel, { color: D.tabText }, active && styles.tabLabelActive]}>
-                {tab === "pending" ? "Na čekanju" : "Završene"}
+                {tab === "pending" ? t("orders.pending") : t("orders.done")}
               </Text>
               {count > 0 && (
                 <View style={[styles.tabBadge, active ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
@@ -233,12 +235,12 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
             color={D.emptyIcon}
           />
           <Text style={[styles.emptyTitle, { color: D.emptyTitle }]}>
-            {activeTab === "pending" ? "Nema aktivnih narudžbi" : "Nema završenih narudžbi"}
+            {activeTab === "pending" ? t("orders.noPending") : t("orders.noDone")}
           </Text>
           <Text style={[styles.emptySubtitle, { color: D.emptySubtitle }]}>
             {activeTab === "pending"
-              ? "Narudžbe koje pošalješ pojavit će se ovdje"
-              : "Završene narudžbe prikazat će se ovdje"}
+              ? t("orders.pendingHint")
+              : t("orders.doneHint")}
           </Text>
         </View>
       ) : (
@@ -251,7 +253,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
             activeTab === "done" && doneOrders.length > 0 ? (
               <Pressable style={[styles.clearAllBtn, { backgroundColor: D.clearAllBg }]} onPress={removeAllDone}>
                 <Ionicons name="trash-outline" size={15} color={D.clearAllText} />
-                <Text style={[styles.clearAllText, { color: D.clearAllText }]}>Obriši sve završene</Text>
+                <Text style={[styles.clearAllText, { color: D.clearAllText }]}>{t("orders.clearAll")}</Text>
               </Pressable>
             ) : null
           }

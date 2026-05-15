@@ -2,6 +2,7 @@ import { auth } from "@/firebase";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -43,11 +44,12 @@ export default function LoginScreen() {
     linkBack: "#aaa",
   };
 
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const handleLogin = async () => {
     if (!email || !password)
-      return Alert.alert("Greška", "Unesite email i lozinku.");
+      return Alert.alert(t("common.error"), t("auth.login.errorEmpty"));
 
     setLoading(true);
     try {
@@ -67,7 +69,7 @@ export default function LoginScreen() {
         router.replace("/register");
       }
     } catch (err: any) {
-      Alert.alert("Prijava neuspješna", err.message);
+      Alert.alert(t("auth.login.errorFailed"), err.message);
     } finally {
       setLoading(false);
     }
@@ -79,12 +81,12 @@ export default function LoginScreen() {
       style={[styles.wrapper, { backgroundColor: D.wrapper }]}
     >
       <View style={[styles.container, { backgroundColor: D.wrapper }]}>
-        <Text style={styles.title}>Admin prijava</Text>
-        <Text style={[styles.subtitle, { color: D.subtitle }]}>Samo za administratore objekta</Text>
+        <Text style={styles.title}>{t("auth.login.title")}</Text>
+        <Text style={[styles.subtitle, { color: D.subtitle }]}>{t("auth.login.subtitle")}</Text>
 
         <TextInput
           style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
-          placeholder="Email"
+          placeholder={t("auth.login.email")}
           placeholderTextColor={D.placeholder}
           value={email}
           onChangeText={setEmail}
@@ -93,7 +95,7 @@ export default function LoginScreen() {
         />
         <TextInput
           style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
-          placeholder="Lozinka"
+          placeholder={t("auth.login.password")}
           placeholderTextColor={D.placeholder}
           value={password}
           onChangeText={setPassword}
@@ -105,15 +107,15 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
         >
-          <Text style={styles.btnText}>{loading ? "Prijava..." : "Prijavi se"}</Text>
+          <Text style={styles.btnText}>{loading ? t("auth.login.submitting") : t("auth.login.submit")}</Text>
         </Pressable>
 
         <Pressable onPress={() => router.replace("/register")} style={styles.linkBtn}>
-          <Text style={[styles.linkText, { color: D.link }]}>Nemate nalog? Registrujte se</Text>
+          <Text style={[styles.linkText, { color: D.link }]}>{t("auth.login.noAccount")}</Text>
         </Pressable>
 
         <Pressable onPress={() => router.replace("/join")} style={styles.linkBtn}>
-          <Text style={[styles.linkText, { color: D.linkBack }]}>← Nazad na join</Text>
+          <Text style={[styles.linkText, { color: D.linkBack }]}>{t("auth.login.backToJoin")}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

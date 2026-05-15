@@ -9,6 +9,7 @@ import * as Device from "expo-device";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { collection, doc, getDocsFromServer, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -309,7 +310,7 @@ export default function WaiterScreen() {
       headerTitle: () => (
         <Pressable onPress={() => setShowNameModal(true)} hitSlop={10}>
           <Text style={{ color: headerTheme === "primaryColor" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B", fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>
-            {waiterName || "Postavi ime"}
+            {waiterName || t("waiter.setName")}
           </Text>
         </Pressable>
       ),
@@ -452,8 +453,8 @@ export default function WaiterScreen() {
       region:
         locationMode === "none" ? "" :
         locationMode === "zones" ? selectedZone :
-        locationMode === "tables" ? (selectedTable ? `Sto ${selectedTable}` : "") :
-        /* zones_tables */ selectedZone && selectedTable ? `${selectedZone} · Sto ${selectedTable}` : selectedZone,
+        locationMode === "tables" ? (selectedTable ? `${t("waiter.tableLabel", { n: selectedTable })}` : "") :
+        /* zones_tables */ selectedZone && selectedTable ? `${selectedZone} · ${t("waiter.tableLabel", { n: selectedTable })}` : selectedZone,
       totalPrice: order.reduce((sum, o) => sum + o.price * o.quantity, 0),
       items: order.map((o) => ({
         name: o.name,
@@ -502,7 +503,7 @@ export default function WaiterScreen() {
     } catch (e) {
       console.error(e);
       haptic.error();
-      Alert.alert("Greška", "Narudžba nije poslana. Pokušaj ponovo.");
+      Alert.alert(t("common.error"), t("waiter.errorSend"));
     } finally {
       setSending(false);
     }
@@ -549,11 +550,12 @@ export default function WaiterScreen() {
   );
 
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
+  const { t } = useTranslation();
 
   if (loading) return (
     <View style={{ flex: 1, backgroundColor: darkMode ? "#111827" : "#F9FAFB", alignItems: "center", justifyContent: "center", gap: 16 }}>
       <ActivityIndicator size="large" color={primaryColor} />
-      <Text style={{ fontSize: 14, color: darkMode ? "#9CA3AF" : "#6B7280", fontWeight: "500" }}>Učitavanje...</Text>
+      <Text style={{ fontSize: 14, color: darkMode ? "#9CA3AF" : "#6B7280", fontWeight: "500" }}>{t("waiter.loading")}</Text>
     </View>
   );
 
@@ -655,8 +657,8 @@ export default function WaiterScreen() {
           <Ionicons name="cloud-offline-outline" size={16} color="#fff" />
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13, flex: 1 }}>
             {pendingOfflineCount > 0
-              ? `Nema konekcije — ${pendingOfflineCount} narudžba čeka na slanje`
-              : "Nema konekcije — narudžbe će biti poslane automatski"}
+              ? t("waiter.noConnectionPending", { count: pendingOfflineCount })
+              : t("waiter.noConnection")}
           </Text>
         </View>
       )}
@@ -671,8 +673,8 @@ export default function WaiterScreen() {
           <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13, flex: 1 }}>
             {reconnectedCount > 0
-              ? `Ponovo online — ${reconnectedCount} narudžba uspješno poslana ✓`
-              : "Ponovo online ✓"}
+              ? t("waiter.backOnlineSent", { count: reconnectedCount })
+              : t("waiter.backOnline")}
           </Text>
         </View>
       )}
@@ -850,10 +852,10 @@ export default function WaiterScreen() {
               >
                 <Text style={{ fontWeight: "700", color: SC.zoneText }}>
                   {
-                    locationMode === "zones" ? (selectedZone || "Odaberi zonu") :
-                    locationMode === "tables" ? (selectedTable ? `Sto ${selectedTable}` : "Odaberi sto") :
-                    selectedZone && selectedTable ? `${selectedZone} · Sto ${selectedTable}` :
-                    selectedZone ? `${selectedZone} · odaberi sto` : "Odaberi lokaciju"
+                    locationMode === "zones" ? (selectedZone || t("waiter.selectZone")) :
+                    locationMode === "tables" ? (selectedTable ? t("waiter.tableLabel", { n: selectedTable }) : t("waiter.selectTable")) :
+                    selectedZone && selectedTable ? `${selectedZone} · ${t("waiter.tableLabel", { n: selectedTable })}` :
+                    selectedZone ? `${selectedZone} · ${t("waiter.selectTable")}` : t("waiter.selectLocation")
                   }
                 </Text>
               </Pressable>

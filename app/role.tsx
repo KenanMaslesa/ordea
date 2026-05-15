@@ -1,6 +1,7 @@
 // app/role.tsx
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "./context/ThemeContext";
 import { setItem } from "./helper";
@@ -9,6 +10,7 @@ export default function RoleScreen() {
   const router = useRouter();
   const { primaryColor } = useTheme();
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
+  const { t } = useTranslation();
 
   const selectRole = async (role: "waiter" | "bartender") => {
     await setItem("@role", role);
@@ -17,12 +19,12 @@ export default function RoleScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Odaberi rolu</Text>
+      <Text style={styles.title}>{t("role.title")}</Text>
       <Pressable style={styles.btn} onPress={() => selectRole("waiter")}>
-        <Text style={styles.btnText}>Konobar</Text>
+        <Text style={styles.btnText}>{t("role.waiter")}</Text>
       </Pressable>
       <Pressable style={styles.btn} onPress={() => selectRole("bartender")}>
-        <Text style={styles.btnText}>Sanker</Text>
+        <Text style={styles.btnText}>{t("role.bartender")}</Text>
       </Pressable>
     </View>
   );

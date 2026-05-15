@@ -8,8 +8,13 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { Platform, StatusBar } from "react-native";
+import { I18nManager, Platform, StatusBar } from "react-native";
 import "react-native-reanimated";
+// Bootstrap i18n — must be imported before any screen renders
+import "./i18n";
+
+// Allow RTL layout for Arabic (takes effect on next app start when forceRTL is called)
+I18nManager.allowRTL(true);
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";

@@ -2,6 +2,7 @@ import { auth } from "@/firebase";
 import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -44,6 +45,8 @@ export default function RegisterScreen() {
 
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
+  const { t } = useTranslation();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [placeName, setPlaceName] = useState("");
@@ -54,13 +57,13 @@ export default function RegisterScreen() {
     const trimmedName = placeName.trim();
 
     if (!trimmedEmail || !password) {
-      return Alert.alert("Greška", "Unesite email i lozinku.");
+      return Alert.alert(t("common.error"), t("auth.register.errorEmpty"));
     }
     if (password.length < 6) {
-      return Alert.alert("Greška", "Lozinka mora imati najmanje 6 znakova.");
+      return Alert.alert(t("common.error"), t("auth.register.errorShortPassword"));
     }
     if (!trimmedName) {
-      return Alert.alert("Greška", "Unesite naziv objekta.");
+      return Alert.alert(t("common.error"), t("auth.register.errorNoName"));
     }
 
     setLoading(true);
@@ -80,7 +83,7 @@ export default function RegisterScreen() {
 
       router.replace("/admin");
     } catch (err: any) {
-      Alert.alert("Greška", err.message);
+      Alert.alert(t("common.error"), err.message);
     } finally {
       setLoading(false);
     }
@@ -92,10 +95,10 @@ export default function RegisterScreen() {
       style={[styles.wrapper, { backgroundColor: D.wrapper }]}
     >
       <ScrollView contentContainerStyle={[styles.container, { backgroundColor: D.wrapper }]} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Registracija</Text>
-        <Text style={[styles.subtitle, { color: D.subtitle }]}>Kreirajte admin nalog za vaš objekat</Text>
+        <Text style={styles.title}>{t("auth.register.title")}</Text>
+        <Text style={[styles.subtitle, { color: D.subtitle }]}>{t("auth.register.subtitle")}</Text>
 
-        <Text style={[styles.label, { color: D.label }]}>Email</Text>
+        <Text style={[styles.label, { color: D.label }]}>{t("auth.register.emailLabel")}</Text>
         <TextInput
           style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
           placeholder="admin@email.com"
@@ -106,27 +109,27 @@ export default function RegisterScreen() {
           autoCapitalize="none"
         />
 
-        <Text style={[styles.label, { color: D.label }]}>Lozinka</Text>
+        <Text style={[styles.label, { color: D.label }]}>{t("auth.register.passwordLabel")}</Text>
         <TextInput
           style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
-          placeholder="Min. 6 znakova"
+          placeholder={t("auth.register.passwordPlaceholder")}
           placeholderTextColor={D.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        <Text style={[styles.label, { color: D.label }]}>Naziv objekta</Text>
+        <Text style={[styles.label, { color: D.label }]}>{t("auth.register.placeNameLabel")}</Text>
         <TextInput
           style={[styles.input, { backgroundColor: D.input, borderColor: D.inputBorder, color: D.inputText }]}
-          placeholder="npr. Caffe Bar Centar"
+          placeholder={t("auth.register.placeNamePlaceholder")}
           placeholderTextColor={D.placeholder}
           value={placeName}
           onChangeText={setPlaceName}
         />
 
         <Text style={[styles.hint, { marginTop: 8, textAlign: "center", color: D.hint }]}>
-          Zone, stolove i ostale postavke podešavate u admin panelu nakon registracije.
+          {t("auth.register.hint")}
         </Text>
 
         <Pressable
@@ -134,11 +137,11 @@ export default function RegisterScreen() {
           onPress={handleRegister}
           disabled={loading}
         >
-          <Text style={styles.btnText}>{loading ? "Kreiranje..." : "Kreiraj nalog"}</Text>
+          <Text style={styles.btnText}>{loading ? t("auth.register.submitting") : t("auth.register.submit")}</Text>
         </Pressable>
 
         <Pressable onPress={() => router.replace("/login")} style={{ marginTop: 16, alignItems: "center" }}>
-          <Text style={[styles.linkText, { color: D.link }]}>Već imate nalog? Prijavite se</Text>
+          <Text style={[styles.linkText, { color: D.link }]}>{t("auth.register.hasAccount")}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
