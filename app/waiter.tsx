@@ -4,6 +4,7 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import NetInfo from "@react-native-community/netinfo";
 import * as Device from "expo-device";
 import { useNavigation, useRouter } from "expo-router";
 import { collection, doc, getDocsFromServer, onSnapshot, orderBy, query } from "firebase/firestore";
@@ -127,10 +128,35 @@ export default function WaiterScreen() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAdminPreview, setIsAdminPreview] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
+  const [reconnectedCount, setReconnectedCount] = useState(0);
+  const [justReconnected, setJustReconnected] = useState(false);
+  const wasOfflineRef = useRef(false);
+  const pendingOfflineCountRef = useRef(0);
   const router = useRouter();
 
   useEffect(() => {
     getItem("@role").then(r => { if (r === "admin") setIsAdminPreview(true); });
+  }, []);
+
+  useEffect(() => {
+    const unsub = NetInfo.addEventListener(state => {
+      const connected = state.isConnected ?? true;
+      setIsConnected(connected);
+      if (!connected) {
+        wasOfflineRef.current = true;
+      } else if (wasOfflineRef.current) {
+        wasOfflineRef.current = false;
+        const count = pendingOfflineCountRef.current;
+        pendingOfflineCountRef.current = 0;
+        setPendingOfflineCount(0);
+        setReconnectedCount(count);
+        setJustReconnected(true);
+        setTimeout(() => setJustReconnected(false), 3000);
+      }
+    });
+    return unsub;
   }, []);
 
   // --- Load menu: cache first, re-fetch only when menuVersion changes ---
@@ -250,9 +276,14 @@ export default function WaiterScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <Pressable onPress={() => setShowNameModal(true)}>
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 18 }}>
-            Konobar
+        <Pressable
+          onPress={() => setShowNameModal(true)}
+          style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+          hitSlop={10}
+        >
+          <Ionicons name="person-circle-outline" size={26} color="rgba(255,255,255,0.9)" />
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17 }}>
+            {waiterName || "Postavi ime"}
           </Text>
         </Pressable>
       ),
@@ -382,41 +413,61 @@ export default function WaiterScreen() {
 
     if (order.length === 0) return;
 
+    setSending(true);
+
+    const input = {
+      waiterId: `${waiterName}_${deviceId}`,
+      waiterName,
+      status: "pending" as const,
+      createdAt: Date.now(),
+      dayKey: new Date().toISOString().slice(0, 10),
+      orderNote: note.trim() || null,
+      region:
+        locationMode === "none" ? "" :
+        locationMode === "zones" ? selectedZone :
+        locationMode === "tables" ? (selectedTable ? `Sto ${selectedTable}` : "") :
+        /* zones_tables */ selectedZone && selectedTable ? `${selectedZone} · Sto ${selectedTable}` : selectedZone,
+      totalPrice: order.reduce((sum, o) => sum + o.price * o.quantity, 0),
+      items: order.map((o) => ({
+        name: o.name,
+        qty: o.quantity,
+        category: o.category,
+        price: o.price,
+        sectorId: o.sectorId ?? "",
+      })),
+      sectorStatus: Object.fromEntries(
+        [...new Set(order.map(o => o.sectorId).filter(Boolean))].map(id => [id, "pending"])
+      ) as Record<string, "pending" | "done">,
+      sectorFinishedAt: {},
+      sectorNames: Object.fromEntries(
+        placeSectors
+          .filter(s => order.some(o => o.sectorId === s.id))
+          .map(s => [s.id, s.name])
+      ),
+    };
+
+    if (!isConnected) {
+      // Fire-and-forget: Firebase buffers the write in memory and sends it
+      // automatically when the connection is restored. Don't await — addDoc
+      // on web won't resolve until the server confirms, which would block the UI.
+      createOrder(placeId, input).catch(console.error);
+      haptic.success();
+      setOrder([]);
+      setNote("");
+      sheetRef.current?.snapToIndex(0);
+      setSending(false);
+      pendingOfflineCountRef.current += 1;
+      setPendingOfflineCount(c => c + 1);
+      Alert.alert(
+        "Narudžba u redu čekanja 📶",
+        "Nema konekcije. Narudžba će biti poslana automatski čim se povežeš na internet.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     try {
-      setSending(true);
-
-      await createOrder(placeId, {
-        waiterId: `${waiterName}_${deviceId}`,
-        waiterName,
-        status: "pending",
-        createdAt: Date.now(),
-        dayKey: new Date().toISOString().slice(0, 10),
-        orderNote: note.trim() || null,
-        region:
-          locationMode === "none" ? "" :
-          locationMode === "zones" ? selectedZone :
-          locationMode === "tables" ? (selectedTable ? `Sto ${selectedTable}` : "") :
-          /* zones_tables */ selectedZone && selectedTable ? `${selectedZone} · Sto ${selectedTable}` : selectedZone,
-        totalPrice: order.reduce((sum, o) => sum + o.price * o.quantity, 0),
-        items: order.map((o) => ({
-          name: o.name,
-          qty: o.quantity,
-          category: o.category,
-          price: o.price,
-          sectorId: o.sectorId ?? "",
-        })),
-        sectorStatus: Object.fromEntries(
-          [...new Set(order.map(o => o.sectorId).filter(Boolean))].map(id => [id, "pending"])
-        ) as Record<string, "pending" | "done">,
-        sectorFinishedAt: {},
-        sectorNames: Object.fromEntries(
-          placeSectors
-            .filter(s => order.some(o => o.sectorId === s.id))
-            .map(s => [s.id, s.name])
-        ),
-      });
-
-      // ✅ SUCCESS
+      await createOrder(placeId, input);
       haptic.success();
       setOrder([]);
       setNote("");
@@ -474,6 +525,38 @@ export default function WaiterScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F4F5F7" }}>
+      {/* Offline / flushing banner */}
+      {!isConnected && (
+        <View style={{
+          flexDirection: "row", alignItems: "center", gap: 8,
+          backgroundColor: "#DC2626",
+          paddingHorizontal: 16, paddingVertical: 10,
+        }}>
+          <Ionicons name="cloud-offline-outline" size={16} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13, flex: 1 }}>
+            {pendingOfflineCount > 0
+              ? `Nema konekcije — ${pendingOfflineCount} narudžba čeka na slanje`
+              : "Nema konekcije — narudžbe će biti poslane automatski"}
+          </Text>
+        </View>
+      )}
+
+      {/* Back online banner */}
+      {justReconnected && (
+        <View style={{
+          flexDirection: "row", alignItems: "center", gap: 8,
+          backgroundColor: "#16a34a",
+          paddingHorizontal: 16, paddingVertical: 10,
+        }}>
+          <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13, flex: 1 }}>
+            {reconnectedCount > 0
+              ? `Ponovo online — ${reconnectedCount} narudžba uspješno poslana ✓`
+              : "Ponovo online ✓"}
+          </Text>
+        </View>
+      )}
+
       {/* Sticky Header */}
       <View style={styles.categories}>
         <FlatList
@@ -697,10 +780,10 @@ export default function WaiterScreen() {
             <Pressable
               disabled={sending}
               onPress={submitOrder}
-              style={[styles.nextBtn, sending && { opacity: 0.6 }]}
+              style={[styles.nextBtn, sending && { opacity: 0.6 }, !isConnected && { backgroundColor: "#D97706" }]}
             >
               <Text style={{ fontWeight: "800" }}>
-                {sending ? "SLANJE..." : "POŠALJI NARUDŽBU 🚀"}
+                {sending ? "SLANJE..." : !isConnected ? "SAČUVAJ NARUDŽBU 📡" : "POŠALJI NARUDŽBU 🚀"}
               </Text>
             </Pressable>
           )}

@@ -218,3 +218,6 @@ Kafić, caffe bar, restoran, pizzeria, fast food, slastičarnica, pekara, beach 
 - Višesektorski model (kuhinja + šank neovisno)
 - Objekt može biti live za < 1 sat
 
+
+dodati:
+opcija otkazivanja narudzbe admin setuje i vrijeme u kojem se moze otkazati 1min npr
