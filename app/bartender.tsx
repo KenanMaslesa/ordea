@@ -456,7 +456,7 @@ const makeStyles = (C: AppTheme, darkMode: boolean, primaryColor: string) => Sty
       borderRadius: 10,
       backgroundColor: darkMode ? "#374151" : primaryColor + "20",
       borderWidth: darkMode ? 0 : 1,
-      borderColor: primaryColor,
+      borderColor: primaryColor + "30",
       alignItems: "center",
       justifyContent: "center",
     },
@@ -468,7 +468,7 @@ const makeStyles = (C: AppTheme, darkMode: boolean, primaryColor: string) => Sty
       backgroundColor: darkMode ? "#374151" : primaryColor + "20",
       borderRadius: 10,
       borderWidth: darkMode ? 0 : 1,
-      borderColor: primaryColor,
+      borderColor: primaryColor + "30",
     },
     countNum: {
       fontSize: 19,
