@@ -272,7 +272,7 @@ export default function Bartender() {
 
   /* ================= UI ================= */
 
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, darkMode, primaryColor), [C, darkMode, primaryColor]);
 
   const headerLabel = mySectors.length > 0
     ? mySectors.map(s => s.name).join(" + ")
@@ -286,30 +286,19 @@ export default function Bartender() {
       <View style={styles.header}>
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Pressable onPress={() => setDrawerOpen(true)} hitSlop={12}>
-            <Ionicons name="menu" size={24} color={C.textSub} />
+            <View style={styles.iconBtn}>
+              <Ionicons name="menu" size={20} color={darkMode ? "#E5E7EB" : primaryColor} />
+            </View>
           </Pressable>
-          {isAdminPreview && (
-            <Pressable
-              onPress={() => router.replace("/admin")}
-              hitSlop={12}
-            >
-              <Ionicons name="arrow-back" size={22} color={C.textMuted} />
-            </Pressable>
-          )}
           <Text style={styles.title}>{headerLabel}</Text>
           <View style={[styles.connDot, { backgroundColor: isConnected ? C.accent : C.danger }]} />
         </View>
-        <Pressable onPress={() => setDarkMode(!darkMode)} style={styles.themeToggle} hitSlop={10}>
-          <Ionicons
-            name={darkMode ? "sunny-outline" : "moon-outline"}
-            size={22}
-            color={C.textSub}
-          />
+        <Pressable onPress={() => setShowHistory(true)} hitSlop={10}>
+          <View style={styles.iconBtn}>
+            <Ionicons name="time-outline" size={20} color={darkMode ? "#E5E7EB" : primaryColor} />
+          </View>
         </Pressable>
-        <Pressable onPress={() => setShowHistory(true)} style={styles.themeToggle} hitSlop={10}>
-          <Ionicons name="time-outline" size={22} color={C.textSub} />
-        </Pressable>
-        <View style={styles.countBadge}>
+        <View style={[styles.countBadge, { marginLeft: 8 }]}>
           <Text style={styles.countNum}>{visibleOrders.length}</Text>
           <Text style={styles.countLabel}>aktivnih</Text>
         </View>
@@ -340,7 +329,7 @@ export default function Bartender() {
       )}
 
       <ScrollView
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24, flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
       >
         {visibleOrders.map((o, idx) => {
@@ -406,11 +395,11 @@ export default function Bartender() {
               Omogući zvuk da odmah reagujete na nove narudžbe.
             </Text>
             <Pressable
-              style={({ pressed }) => [styles.doneBtn, { marginTop: 0 }, pressed && styles.doneBtnPressed]}
+              style={({ pressed }) => [styles.doneBtn, { marginTop: 4, alignSelf: "stretch" }, pressed && styles.doneBtnPressed]}
               onPress={unlockAudio}
             >
               <Ionicons name="volume-high" size={18} color={C.white} />
-              <Text style={styles.doneBtnText}>OMOGUĆI ZVUK</Text>
+              <Text style={styles.doneBtnText}>Omogući zvuk</Text>
             </Pressable>
           </View>
         </View>
@@ -421,7 +410,7 @@ export default function Bartender() {
 
 /* ================= STYLES ================= */
 
-const makeStyles = (C: AppTheme) => StyleSheet.create({
+const makeStyles = (C: AppTheme, darkMode: boolean, primaryColor: string) => StyleSheet.create({
     root: {
       flex: 1,
       backgroundColor: C.bg,
@@ -431,9 +420,9 @@ const makeStyles = (C: AppTheme) => StyleSheet.create({
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 12,
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      paddingBottom: 10,
       borderBottomWidth: 1,
       borderBottomColor: C.border,
     },
@@ -450,36 +439,46 @@ const makeStyles = (C: AppTheme) => StyleSheet.create({
       letterSpacing: 0.5,
     },
     title: {
-      fontSize: 26,
-      fontWeight: "800",
+      fontSize: 20,
+      fontWeight: "700",
       color: C.text,
-      letterSpacing: -0.5,
+      letterSpacing: -0.3,
     },
     themeToggle: {
       padding: 8,
       marginRight: 8,
     },
+    iconBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: darkMode ? "#374151" : primaryColor + "20",
+      borderWidth: darkMode ? 0 : 1,
+      borderColor: primaryColor,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     countBadge: {
       alignItems: "center",
-      backgroundColor: C.surfaceHigh,
-      borderRadius: 14,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      minWidth: 64,
-      borderWidth: 1,
-      borderColor: C.border,
+      justifyContent: "center",
+      height: 50,
+      paddingHorizontal: 12,
+      backgroundColor: darkMode ? "#374151" : primaryColor + "20",
+      borderRadius: 10,
+      borderWidth: darkMode ? 0 : 1,
+      borderColor: primaryColor,
     },
     countNum: {
-      fontSize: 22,
-      fontWeight: "800",
-      color: C.text,
-      lineHeight: 26,
+      fontSize: 19,
+      fontWeight: "700",
+      color: darkMode ? "#E5E7EB" : primaryColor,
+      lineHeight: 17,
     },
     countLabel: {
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: "600",
-      color: C.textMuted,
-      letterSpacing: 0.5,
+      color: darkMode ? "#9CA3AF" : primaryColor,
+      letterSpacing: 0.4,
       textTransform: "uppercase",
     },
 
@@ -515,12 +514,13 @@ const makeStyles = (C: AppTheme) => StyleSheet.create({
       gap: 8,
     },
     doneBtnPressed: { backgroundColor: C.accentDim },
-    doneBtnText: { color: C.white, fontSize: 16, fontWeight: "800", letterSpacing: 0.5 },
+    doneBtnText: { color: C.white, fontSize: 15, fontWeight: "700" },
 
     /* ── EMPTY ── */
     empty: {
+      flex: 1,
       alignItems: "center",
-      marginTop: 80,
+      justifyContent: "center",
       gap: 10,
     },
     emptyTitle: {
