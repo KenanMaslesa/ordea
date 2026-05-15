@@ -284,6 +284,32 @@ createOrder() → Firestore orders/{orderId}
 
 ---
 
+## Prelazak na Firebase Blaze Plan — Checklista
+
+Kod je već spreman. Samo trebaju ovi koraci:
+
+### 1. Upgrade plan
+Firebase Console → Settings → Usage & Billing → **Upgrade to Blaze**
+(Besplatni tier ostaje isti, platiš samo prekoračenje.)
+
+### 2. Aktiviraj Firestore TTL (auto-brisanje starih narudžbi)
+Narudžbe imaju `expiresAt` polje (3 dana od kreiranja). Aktivacija:
+
+```bash
+firebase deploy --only firestore:indexes
+```
+
+Kada pita "Would you like to delete these indexes?" → odgovori **N**.
+
+Ili ručno kroz konzolu: Firestore → **Indexes** → **TTL** → Add TTL policy:
+- Collection group: `orders`
+- Field path: `expiresAt`
+
+### 3. (Opcionalno) Cloud Functions za dnevne izvještaje
+Još nije implementirano — treba Blaze za Functions deployment.
+
+---
+
 ## Planirane Funkcionalnosti (nije implementirano)
 
 - 📊 Grafovi (react-native-chart-kit ili Victory Native)

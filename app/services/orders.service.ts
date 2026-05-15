@@ -1,6 +1,7 @@
 import { db, ordersPath } from "@/firebase"
 import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore"
-import { Order, OrderCreateInput, OrderItem } from "../types/order.types"
+import { Order, OrderCreateInput } from "../types/order.types"
+import { recordOrderCancelled, recordOrderDone, recordSectorDone } from "./stats.service"
 
 export type OrdersListener = (
   orders: Order[],
@@ -47,30 +48,32 @@ export async function markOrderDone(placeId: string, orderId: string) {
  */
 export async function markSectorDone(
   placeId: string,
-  orderId: string,
+  order: Order,
   sectorId: string,
-  orderItems: OrderItem[],
   currentSectorStatus?: Record<string, string>
 ) {
-  const ref = doc(db, ordersPath(placeId), orderId)
+  const ref = doc(db, ordersPath(placeId), order.id)
   const now = Date.now()
 
-  const uniqueSectorIds = [...new Set(orderItems.map(i => i.sectorId).filter(Boolean))]
+  const uniqueSectorIds = [...new Set(order.items.map(i => i.sectorId).filter(Boolean))]
 
   // Optimistically merge the new done sector into the known status
   const mergedStatus: Record<string, string> = { ...(currentSectorStatus ?? {}), [sectorId]: "done" }
   const allDone = uniqueSectorIds.length > 0 && uniqueSectorIds.every(id => mergedStatus[id] === "done")
 
+  // Track per-sector completion time in stats (fire-and-forget)
+  recordSectorDone(placeId, order.dayKey, sectorId, now - order.createdAt).catch(console.error)
+
   if (allDone) {
-    // Single write: mark sector done + order done
     await updateDoc(ref, {
       [`sectorStatus.${sectorId}`]: "done",
       [`sectorFinishedAt.${sectorId}`]: now,
       status: "done",
       finishedAt: now,
     })
+    // Record full order stats (fire-and-forget)
+    recordOrderDone(placeId, order, now).catch(console.error)
   } else {
-    // Just mark the sector
     await updateDoc(ref, {
       [`sectorStatus.${sectorId}`]: "done",
       [`sectorFinishedAt.${sectorId}`]: now,
@@ -78,16 +81,21 @@ export async function markSectorDone(
   }
 }
 
-export async function cancelOrder(placeId: string, orderId: string, cancelledBy: string) {
+export async function cancelOrder(placeId: string, orderId: string, cancelledBy: string, dayKey: string) {
   await updateDoc(doc(db, ordersPath(placeId), orderId), {
     status: "cancelled",
     cancelledAt: Date.now(),
     cancelledBy,
   })
+  recordOrderCancelled(placeId, dayKey).catch(console.error)
 }
 
 export async function createOrder(placeId: string, input: OrderCreateInput) {
-  await addDoc(collection(db, ordersPath(placeId)), input)
+  // expiresAt: Firestore TTL auto-delete nakon 3 dana (zahtijeva Blaze plan + TTL policy)
+  await addDoc(collection(db, ordersPath(placeId)), {
+    ...input,
+    expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+  })
 }
 
 export function listenMyOrders(

@@ -220,5 +220,9 @@ Kafić, caffe bar, restoran, pizzeria, fast food, slastičarnica, pekara, beach 
 
 
 dodati:
-opcija otkazivanja narudzbe admin setuje i vrijeme u kojem se moze otkazati 1min npr
-admin mora imati uvid ko koristi app i izbrisati korisnike (deviceid+name) se unese kad konobar unese ime/promijeni ga spremi se u firestore
+-opcija otkazivanja narudzbe admin setuje i vrijeme u kojem se moze otkazati 1min npr
+
+-admin mora imati uvid ko koristi app i izbrisati korisnike (deviceid+name) se unese kad konobar unese ime/promijeni ga spremi se u firestore
+
+- napraviti da admin moze raditi sve kao konobar, kao sanker, gledat admin dio.. to je za male lokale a i ahmed i hamza su admini a rade kao konobari
+znaci trebaju imati svoje ime kao konobari normalno

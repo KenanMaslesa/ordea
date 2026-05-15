@@ -243,7 +243,7 @@ export default function Bartender() {
       // Fire-and-forget — Firestore buffers the update and sends when online
       let optimisticStatus = { ...(order.sectorStatus ?? {}) };
       for (const sid of relevantSectors) {
-        markSectorDone(placeId, order.id, sid, order.items, optimisticStatus).catch(console.error);
+        markSectorDone(placeId, order, sid, optimisticStatus).catch(console.error);
         optimisticStatus = { ...optimisticStatus, [sid]: "done" };
       }
       pendingOfflineDoneRef.current += 1;
@@ -252,7 +252,7 @@ export default function Bartender() {
     }
     let optimisticStatus = { ...(order.sectorStatus ?? {}) };
     for (const sid of relevantSectors) {
-      await markSectorDone(placeId, order.id, sid, order.items, optimisticStatus);
+      await markSectorDone(placeId, order, sid, optimisticStatus);
       optimisticStatus = { ...optimisticStatus, [sid]: "done" };
     }
   };
