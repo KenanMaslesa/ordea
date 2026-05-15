@@ -1,5 +1,6 @@
 import { db, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -10,6 +11,7 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -286,10 +288,45 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
             <Text style={[styles.infoRow, { color: D.infoText }]}>
               <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Naziv: </Text>{place.name}
             </Text>
-            <Text style={[styles.infoRow, { color: D.infoText }]}>
-              <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Join kod: </Text>
-              <Text style={styles.joinCode}>{place.joinCode}</Text>
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoLabel, { color: D.infoLabel }]}>Join kod</Text>
+                <Text style={styles.joinCode}>{place.joinCode}</Text>
+              </View>
+              <Pressable
+                onPress={async () => {
+                  const joinUrl = Platform.OS === "web"
+                    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join?code=${place.joinCode}`
+                    : `ordea://join?code=${place.joinCode}`;
+                  const message = `Pridruži se objektu "${place.name}" na Ordea:\n${joinUrl}`;
+                  // Web Share API — radi na mobilnim browserima i PWA (WhatsApp, Viber, SMS...)
+                  if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.share) {
+                    try {
+                      await navigator.share({ title: `Ordea – ${place.name}`, text: message, url: joinUrl });
+                    } catch {
+                      // Korisnik otkazao dijeljenje — ništa ne radimo
+                    }
+                  } else if (Platform.OS === "web") {
+                    // Fallback za desktop browser koji ne podržava Web Share API
+                    await Clipboard.setStringAsync(joinUrl);
+                    Alert.alert("Kopirano!", "Link je kopiran. Pošalji ga radnicima.");
+                  } else {
+                    await Share.share({ message, url: joinUrl });
+                  }
+                }}
+                style={{
+                  flexDirection: "row", alignItems: "center", gap: 6,
+                  backgroundColor: primaryColor + "18",
+                  borderWidth: 1, borderColor: primaryColor + "50",
+                  borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+                }}
+              >
+                <Ionicons name="share-social-outline" size={16} color={primaryColor} />
+                <Text style={{ fontSize: 13, fontWeight: "600", color: primaryColor }}>
+                  Podijeli
+                </Text>
+              </Pressable>
+            </View>
           </View>
         )}
 

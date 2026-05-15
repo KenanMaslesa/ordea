@@ -1,7 +1,7 @@
 ﻿import { Ionicons } from "@expo/vector-icons";
 import * as Device from "expo-device";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -70,6 +70,8 @@ export default function JoinScreen() {
 
   const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
+  const params = useLocalSearchParams<{ code?: string }>();
+
   const [code, setCode] = useState("");
   const [step, setStep] = useState<Step>("code");
   const [name, setName] = useState("");
@@ -78,6 +80,33 @@ export default function JoinScreen() {
   const [placeName, setPlaceName] = useState("");
   const [placeSectors, setPlaceSectors] = useState<Sector[]>([]);
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
+
+  // Auto-submit if code comes from deep link / shared URL
+  useEffect(() => {
+    if (params.code && params.code.length >= 4) {
+      setCode(params.code.toUpperCase());
+      autoSubmitCode(params.code.toUpperCase());
+    }
+  }, []);
+
+  const autoSubmitCode = async (autoCode: string) => {
+    setLoading(true);
+    try {
+      const place = await getPlaceByJoinCode(autoCode.trim());
+      if (!place) {
+        return Alert.alert("Greška", "Kod nije pronađen. Provjerite link i pokušajte ponovo.");
+      }
+      setPlaceId(place.id);
+      setPlaceName(place.name);
+      setPlaceSectors((place as Place).sectors ?? []);
+      setSelectedSectorIds([]);
+      setStep("role");
+    } catch {
+      Alert.alert("Greška", "Problem s povezivanjem. Pokušajte ponovo.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCodeSubmit = async () => {
     if (code.trim().length < 4) {
