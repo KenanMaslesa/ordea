@@ -1,4 +1,4 @@
-﻿import { db, menuPath, placesRoot } from "@/firebase";
+import { db, menuPath, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import {
   addDoc,
@@ -10,7 +10,7 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -68,7 +68,7 @@ function getAllDescendantIds(nodes: MenuNode[], id: string): string[] {
 }
 
 export default function AdminSettings({ placeId, onMenuPress }: Props) {
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor } = useTheme();
 
   const D = darkMode ? {
     root: "#111827",
@@ -137,6 +137,8 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
     iconPickerItem: "#fff",
     iconPickerItemBorder: "#ddd",
   };
+
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const [nodes, setNodes] = useState<MenuNode[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -339,7 +341,7 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
               {!isItem && node.parentId === null && (
                 <Pressable onPress={() => openEditModal(node)} style={styles.emojiBtn}>
                   {node.emoji?.includes("-")
-                    ? <Ionicons name={node.emoji as keyof typeof Ionicons.glyphMap} size={18} color="#0E7C86" />
+                    ? <Ionicons name={node.emoji as keyof typeof Ionicons.glyphMap} size={18} color={primaryColor} />
                     : <Text style={styles.emoji}>{node.emoji || "📁"}</Text>}
                 </Pressable>
               )}
@@ -376,7 +378,7 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
                   <Ionicons
                     name={(sectors.find(s => s.id === node.sectorId)?.icon as any) || "help-circle-outline"}
                     size={14}
-                    color={node.sectorId ? "#0E7C86" : "#aaa"}
+                    color={node.sectorId ? primaryColor : "#aaa"}
                   />
                 </Pressable>
               )}
@@ -439,26 +441,18 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
       }}>
         <Pressable onPress={onMenuPress} hitSlop={12} style={{ padding: 6 }}>
           <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: D.hamburgerBox, alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="menu" size={20} color="#0E7C86" />
+            <Ionicons name="menu" size={20} color={primaryColor} />
           </View>
         </Pressable>
         <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: D.headerTitle, letterSpacing: -0.3 }}>Meni</Text>
         <View style={{ width: 44 }} />
       </View>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ padding: 16 }}
         keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          contentContainerStyle={{ padding: 16, minWidth: 420 }}
-          style={{ flex: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {!placeId ? (
+        {!placeId ? (
             <Text style={{ color: D.emptyText, textAlign: "center", marginTop: 32 }}>Učitavanje...</Text>
           ) : (
             <>
@@ -472,14 +466,13 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
               {nodes.length === 0 && (
                 <Pressable onPress={() => setShowSampleModal(true)} style={styles.sampleBtn}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Ionicons name="sparkles-outline" size={18} color="#0E7C86" />
+                    <Ionicons name="sparkles-outline" size={18} color={primaryColor} />
                     <Text style={styles.sampleBtnText}>Učitaj primjer menija</Text>
                   </View>
                 </Pressable>
               )}
             </>
           )}
-        </ScrollView>
       </ScrollView>
 
       <Modal visible={!!modal} transparent animationType="fade" onRequestClose={() => setModal(null)}>
@@ -598,7 +591,7 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
         <Pressable style={styles.modalOverlay} onPress={() => !loadingSample && setShowSampleModal(false)}>
           <Pressable style={[styles.modalBox, { backgroundColor: D.modalBox }]} onPress={e => e.stopPropagation()}>
             <View style={{ alignItems: "center", marginBottom: 12 }}>
-              <Ionicons name="sparkles" size={36} color="#0E7C86" />
+              <Ionicons name="sparkles" size={36} color={primaryColor} />
             </View>
             <Text style={styles.modalTitle}>Primjer menija</Text>
             <Text style={{ fontSize: 14, color: D.sampleText, marginBottom: 20, lineHeight: 20 }}>
@@ -607,7 +600,7 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
             </Text>
             {loadingSample ? (
               <View style={{ alignItems: "center", paddingVertical: 12 }}>
-                <ActivityIndicator size="large" color="#0E7C86" />
+                <ActivityIndicator size="large" color={primaryColor} />
                 <Text style={{ marginTop: 10, color: D.sampleText, fontSize: 13 }}>Dodavanje artikala...</Text>
               </View>
             ) : (
@@ -647,8 +640,8 @@ export default function AdminSettings({ placeId, onMenuPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { fontSize: 18, fontWeight: "700", color: "#0E7C86", marginBottom: 16 },
+const makeStyles = (p: string) => StyleSheet.create({
+  header: { fontSize: 18, fontWeight: "700", color: p, marginBottom: 16 },
   rowOuter: {
     backgroundColor: "#fff",
     borderRadius: 8,
@@ -678,7 +671,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: "#ddd",
     alignItems: "center", justifyContent: "center", backgroundColor: "#fff",
   },
-  iconPickerItemActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  iconPickerItemActive: { backgroundColor: p, borderColor: p },
   nameInput: { flex: 1, flexShrink: 1, minWidth: 60, fontSize: 14, paddingVertical: 4, paddingHorizontal: 6, color: "#1a1a1a", fontWeight: "500" },
   itemNameInput: { color: "#555", fontWeight: "400" },
   priceInput: {
@@ -686,7 +679,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#ddd", borderRadius: 6, textAlign: "right", color: "#333",
   },
   addBtn: {
-    backgroundColor: "#0E7C86", borderRadius: 6, width: 28, height: 28,
+    backgroundColor: p, borderRadius: 6, width: 28, height: 28,
     alignItems: "center", justifyContent: "center",
   },
   addBtnText: { color: "#fff", fontSize: 16, lineHeight: 20 },
@@ -704,7 +697,7 @@ const styles = StyleSheet.create({
     width: 26, height: 26, borderRadius: 6, borderWidth: 1, borderColor: "#ddd",
     alignItems: "center", justifyContent: "center", backgroundColor: "#f9f9f9",
   },
-  sectorChipActive: { borderColor: "#0E7C86", backgroundColor: "#e8f8f9" },
+  sectorChipActive: { borderColor: p, backgroundColor: "#e8f8f9" },
   inlineSectorPicker: {
     flexDirection: "row", flexWrap: "wrap", gap: 6,
     paddingVertical: 6, paddingHorizontal: 4, marginBottom: 4,
@@ -714,26 +707,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 5,
     borderRadius: 6, borderWidth: 1, borderColor: "#ddd", backgroundColor: "#fff",
   },
-  inlineSectorBtnActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  inlineSectorBtnActive: { backgroundColor: p, borderColor: p },
   inlineSectorLabel: { fontSize: 12, color: "#555" },
   newRootBtn: {
-    marginTop: 20, backgroundColor: "#0E7C86", padding: 14,
+    marginTop: 20, backgroundColor: p, padding: 14,
     borderRadius: 10, alignItems: "center",
   },
   newRootBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   sampleBtn: {
-    marginTop: 12, borderWidth: 1.5, borderColor: "#0E7C86", borderStyle: "dashed",
+    marginTop: 12, borderWidth: 1.5, borderColor: p, borderStyle: "dashed",
     padding: 14, borderRadius: 10, alignItems: "center", backgroundColor: "#f0fafb",
   },
-  sampleBtnText: { color: "#0E7C86", fontWeight: "700", fontSize: 14 },
+  sampleBtnText: { color: p, fontWeight: "700", fontSize: 14 },
   modalOverlay: {
     flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", padding: 20,
   },
   modalBox: { backgroundColor: "#fff", borderRadius: 14, padding: 20 },
-  modalTitle: { fontSize: 16, fontWeight: "700", color: "#0E7C86", marginBottom: 16 },
+  modalTitle: { fontSize: 16, fontWeight: "700", color: p, marginBottom: 16 },
   typeRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
   typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: "#ccc", alignItems: "center" },
-  typeBtnActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  typeBtnActive: { backgroundColor: p, borderColor: p },
   typeBtnText: { fontSize: 14, fontWeight: "600", color: "#555" },
   fieldLabel: { fontSize: 12, color: "#888", marginBottom: 4, marginTop: 8 },
   modalInput: {
@@ -743,13 +736,13 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 20 },
   cancelBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: "#f0f0f0" },
   cancelBtnText: { color: "#555", fontWeight: "600" },
-  saveBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, backgroundColor: "#0E7C86" },
+  saveBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, backgroundColor: p },
   saveBtnText: { color: "#fff", fontWeight: "700" },
   sectorPicker: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   sectorPickerBtn: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
     borderWidth: 1.5, borderColor: "#ddd", backgroundColor: "#fff",
   },
-  sectorPickerBtnActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  sectorPickerBtnActive: { backgroundColor: p, borderColor: p },
   sectorPickerText: { fontSize: 13, fontWeight: "600", color: "#555" },
 });

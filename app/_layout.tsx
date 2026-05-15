@@ -14,7 +14,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/components/useColorScheme";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { ThemeProvider as AppThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider as AppThemeProvider, useTheme } from "./context/ThemeContext";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -56,17 +56,18 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { primaryColor } = useTheme();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppThemeProvider>
-      <StatusBar backgroundColor="#0E7C86" barStyle="light-content" />
+      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
           <Stack.Screen name="join" options={{ headerShown: false }} />
-          <Stack.Screen name="waiter" options={{ headerShown: true }} />
+          <Stack.Screen name="waiter" options={{ headerShown: false }} />
           <Stack.Screen name="waiter-settings" options={{ headerShown: false, presentation: "modal" }} />
           <Stack.Screen name="bartender" options={{ headerShown: false }} />
           <Stack.Screen name="admin" options={{ headerShown: false }} />

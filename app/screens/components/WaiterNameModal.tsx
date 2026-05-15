@@ -1,5 +1,5 @@
 import { getItem, setItem } from "@/app/helper";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -8,6 +8,7 @@ import {
   TextInput,
   View
 } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 
 type WaiterNameModalProps = {
   visible: boolean;
@@ -18,6 +19,8 @@ type WaiterNameModalProps = {
 
 export default function WaiterNameModal({ visible, onClose, onSave, darkMode = false }: WaiterNameModalProps) {
   const [waiterName, setWaiterName] = useState("");
+  const { primaryColor } = useTheme();
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
   const [hasName, setHasName] = useState(false);
 
   const D = {
@@ -109,7 +112,7 @@ export default function WaiterNameModal({ visible, onClose, onSave, darkMode = f
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -134,7 +137,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     padding: 12,
     borderRadius: 8,
     alignItems: "center",

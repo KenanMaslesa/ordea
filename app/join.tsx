@@ -1,7 +1,7 @@
 ﻿import { Ionicons } from "@expo/vector-icons";
 import * as Device from "expo-device";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -22,13 +22,13 @@ type Step = "code" | "role" | "name";
 
 export default function JoinScreen() {
   const router = useRouter();
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor } = useTheme();
 
   const D = darkMode ? {
     wrapper: "#111827",
     subtitle: "#9CA3AF",
     codeInput: "#1F2937",
-    codeInputBorder: "#0E7C86",
+    codeInputBorder: primaryColor,
     codeInputText: "#E5E7EB",
     input: "#1F2937",
     inputBorder: "#374151",
@@ -49,7 +49,7 @@ export default function JoinScreen() {
     wrapper: "#F4F5F7",
     subtitle: "#666",
     codeInput: "#fff",
-    codeInputBorder: "#0E7C86",
+    codeInputBorder: primaryColor,
     codeInputText: "#18181B",
     input: "#fff",
     inputBorder: "#ddd",
@@ -65,8 +65,10 @@ export default function JoinScreen() {
     noSectorsBoxBorder: "#ffe082",
     noSectorsText: "#7a5c00",
     adminLinkText: "#999",
-    backText: "#0E7C86",
+    backText: primaryColor,
   };
+
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const [code, setCode] = useState("");
   const [step, setStep] = useState<Step>("code");
@@ -220,7 +222,7 @@ export default function JoinScreen() {
                     <Ionicons
                         name={(s.icon as keyof typeof Ionicons.glyphMap) || "wine-outline"}
                         size={32}
-                        color={active ? "#fff" : "#0E7C86"}
+                        color={active ? "#fff" : primaryColor}
                         style={{ marginBottom: 6 }}
                       />
                       <Text style={[styles.roleName, { color: D.roleName }, active && { color: "#fff" }]}>{s.name}</Text>
@@ -286,7 +288,7 @@ export default function JoinScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: "#F4F5F7" },
   container: {
     flexGrow: 1,
@@ -297,7 +299,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#0E7C86",
+    color: p,
     marginBottom: 6,
     textAlign: "center",
   },
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     borderWidth: 2,
-    borderColor: "#0E7C86",
+    borderColor: p,
     borderRadius: 12,
     padding: 16,
     fontSize: 22,
@@ -329,7 +331,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   btn: {
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -344,7 +346,7 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
     alignItems: "center",
   },
-  roleBtnActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  roleBtnActive: { backgroundColor: p, borderColor: p },
   roleIcon: { fontSize: 36, marginBottom: 6 },
   roleName: { fontSize: 18, fontWeight: "700", color: "#1a1a1a" },
   roleDesc: { fontSize: 13, color: "#888", marginTop: 2 },
@@ -366,7 +368,7 @@ const styles = StyleSheet.create({
   },
   noSectorsText: { fontSize: 13, color: "#7a5c00", lineHeight: 20, textAlign: "center" },
   backBtn: { marginTop: 20, alignItems: "center" },
-  backText: { color: "#0E7C86", fontSize: 14 },
+  backText: { color: p, fontSize: 14 },
   adminLink: { marginTop: 32, alignItems: "center" },
   adminLinkText: { color: "#999", fontSize: 13 },
 });

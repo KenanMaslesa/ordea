@@ -27,7 +27,7 @@ const { width: SW } = Dimensions.get("window");
 interface Props { placeId: string; onMenuPress?: () => void }
 type Period = "today" | "week" | "month";
 
-/* ─────────── helpers ─────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function fmtMs(ms: number): string {
   const s = Math.floor(ms / 1000);
   if (s < 60) return `${s}s`;
@@ -39,7 +39,7 @@ function pctDiff(curr: number, prev: number): number | null {
   return Math.round(((curr - prev) / prev) * 100);
 }
 
-/* ─────────── mini components ─────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ mini components Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function MiniBar({ value, max, color = TEAL }: { value: number; max: number; color?: string }) {
   const { darkMode } = useTheme();
   const pct = max > 0 ? Math.max(value / max, 0.02) : 0;
@@ -82,7 +82,7 @@ function EmptyCard({ label }: { label: string }) {
   );
 }
 
-/* ─────────── HOURLY HEATMAP ─────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ HOURLY HEATMAP Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function HourlyHeatmap({ data }: { data: Record<string, number> }) {
   const { darkMode } = useTheme();
   const labelColor = darkMode ? "#6B7280" : "#aaa";
@@ -105,16 +105,16 @@ function HourlyHeatmap({ data }: { data: Record<string, number> }) {
         })}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-        <Text style={{ fontSize: 10, color: labelColor }}>Manje gužve</Text>
-        <Text style={{ fontSize: 10, color: labelColor }}>Više gužve</Text>
+        <Text style={{ fontSize: 10, color: labelColor }}>Manje guÃ…Â¾ve</Text>
+        <Text style={{ fontSize: 10, color: labelColor }}>ViÃ…Â¡e guÃ…Â¾ve</Text>
       </View>
     </View>
   );
 }
 
-/* ─────────── TREND CHART (per day) ─────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ TREND CHART (per day) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function TrendChart({ daily }: { daily: DayStats[] }) {
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor } = useTheme();
   if (daily.length < 2) return null;
   const max = Math.max(...daily.map(d => d.revenue ?? 0), 1);
   const barW = Math.floor((SW - 64) / daily.length) - 3;
@@ -127,7 +127,7 @@ function TrendChart({ daily }: { daily: DayStats[] }) {
           const label = d.dayKey.slice(5);
           return (
             <View key={d.dayKey} style={{ alignItems: "center", width: barW }}>
-              <View style={{ width: barW, height: h, backgroundColor: TEAL, borderRadius: 3, opacity: 0.85 }} />
+              <View style={{ width: barW, height: h, backgroundColor: primaryColor, borderRadius: 3, opacity: 0.85 }} />
               {ordered.length <= 14 && (
                 <Text style={{ fontSize: 7, color: darkMode ? "#6B7280" : "#aaa", marginTop: 2 }}>{label}</Text>
               )}
@@ -139,9 +139,9 @@ function TrendChart({ daily }: { daily: DayStats[] }) {
   );
 }
 
-/* ═══════════════════════════════════════════════ MAIN ═══════════════════════════════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â MAIN Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 export default function AdminDashboard({ placeId, onMenuPress }: Props) {
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor } = useTheme();
 
   const D = darkMode ? {
     root: "#111827",
@@ -190,6 +190,8 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
     emptyTitle: "#bbb",
     emptySubtitle: "#ccc",
   };
+
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const [period, setPeriod] = useState<Period>("today");
   const [stats, setStats] = useState<DayStats | null>(null);
@@ -241,7 +243,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
   );
 
   if (!stats && loading) {
-    return <ActivityIndicator style={{ flex: 1, marginTop: 80 }} color={TEAL} size="large" />;
+    return <ActivityIndicator style={{ flex: 1, marginTop: 80 }} color={primaryColor} size="large" />;
   }
 
   const avgCompletion = stats && stats.completedForAvg > 0
@@ -265,54 +267,54 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
   const maxWaiter = topWaiters[0]?.[1] ?? 1;
   const maxRegion = topRegions[0]?.[1] ?? 1;
 
-  const periodLabel = period === "today" ? "jučer" : period === "week" ? "prošlih 7 dana" : "prošlih 30 dana";
+  const periodLabel = period === "today" ? "juÃ„Âer" : period === "week" ? "proÃ…Â¡lih 7 dana" : "proÃ…Â¡lih 30 dana";
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: D.root }}>
-      {/* ── HEADER ── */}
+      {/* Ã¢â€â‚¬Ã¢â€â‚¬ HEADER Ã¢â€â‚¬Ã¢â€â‚¬ */}
       <View style={[styles.header, { backgroundColor: D.header, borderBottomColor: D.headerBorder }]}>
         <Pressable onPress={onMenuPress} hitSlop={12} style={styles.headerHamburger}>
           <View style={[styles.hamburgerBox, { backgroundColor: D.hamburgerBox }]}>
-            <Ionicons name="menu" size={20} color={TEAL} />
+            <Ionicons name="menu" size={20} color={primaryColor} />
           </View>
         </Pressable>
         <Text style={[styles.headerTitle, { color: D.headerTitle }]} numberOfLines={1}>{placeName || "Dashboard"}</Text>
         <View style={{ width: 44 }} />
       </View>
 
-      {/* ── PERIOD TABS ── */}
+      {/* Ã¢â€â‚¬Ã¢â€â‚¬ PERIOD TABS Ã¢â€â‚¬Ã¢â€â‚¬ */}
       <View style={[styles.periodRow, { backgroundColor: D.periodRow, borderColor: D.periodBorder }]}>
         {(["today", "week", "month"] as Period[]).map(p => (
-          <Pressable key={p} onPress={() => setPeriod(p)} style={[styles.periodBtn, { borderColor: period === p ? TEAL : D.periodBtnBorder }, period === p && styles.periodBtnActive]}>
+          <Pressable key={p} onPress={() => setPeriod(p)} style={[styles.periodBtn, { borderColor: period === p ? primaryColor : D.periodBtnBorder }, period === p && styles.periodBtnActive]}>
             <Text style={[styles.periodText, { color: period === p ? "#fff" : D.periodText }]}>
               {p === "today" ? "Danas" : p === "week" ? "7 dana" : "30 dana"}
             </Text>
           </Pressable>
         ))}
         <Pressable onPress={load} style={styles.refreshBtn}>
-          <Ionicons name="refresh" size={18} color={TEAL} />
+          <Ionicons name="refresh" size={18} color={primaryColor} />
         </Pressable>
       </View>
 
-      {loading && <ActivityIndicator style={{ position: "absolute", top: 120, alignSelf: "center" }} color={TEAL} />}
+      {loading && <ActivityIndicator style={{ position: "absolute", top: 120, alignSelf: "center" }} color={primaryColor} />}
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
 
-        {/* ── KPI CARDS ── */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ KPI CARDS Ã¢â€â‚¬Ã¢â€â‚¬ */}
         <View style={styles.kpiRow}>
-          <View style={[styles.kpiCard, { backgroundColor: TEAL }]}>
+          <View style={[styles.kpiCard, { backgroundColor: primaryColor }]}>
             <Text style={[styles.kpiValue, { color: "#fff" }]}>{(stats?.revenue ?? 0).toFixed(2)}</Text>
             <Text style={[styles.kpiLabel, { color: "rgba(255,255,255,0.7)" }]}>KM prihod</Text>
             {revDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={revDiff} /></View>}
           </View>
           <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
-            <Text style={[styles.kpiValue, { color: TEAL }]}>{stats?.ordersCount ?? 0}</Text>
-            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Narudžbi</Text>
+            <Text style={[styles.kpiValue, { color: primaryColor }]}>{stats?.ordersCount ?? 0}</Text>
+            <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>NarudÃ…Â¾bi</Text>
             {ordersDiff !== null && <View style={{ marginTop: 4 }}><DiffBadge pct={ordersDiff} /></View>}
           </View>
           <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
-            <Text style={[styles.kpiValue, { color: TEAL }]}>
-              {stats && stats.ordersCount > 0 ? (stats.revenue / stats.ordersCount).toFixed(2) : "—"}
+            <Text style={[styles.kpiValue, { color: primaryColor }]}>
+              {stats && stats.ordersCount > 0 ? (stats.revenue / stats.ordersCount).toFixed(2) : "Ã¢â‚¬â€"}
             </Text>
             <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Pros. KM</Text>
           </View>
@@ -320,7 +322,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         <View style={styles.kpiRow}>
           {avgCompletion && (
             <View style={[styles.kpiCard, { backgroundColor: D.kpiCard, borderColor: D.kpiCardBorder }]}>
-              <Text style={[styles.kpiValue, { color: TEAL, fontSize: 16 }]}>{avgCompletion}</Text>
+              <Text style={[styles.kpiValue, { color: primaryColor, fontSize: 16 }]}>{avgCompletion}</Text>
               <Text style={[styles.kpiLabel, { color: D.kpiLabel }]}>Pros. izrada</Text>
             </View>
           )}
@@ -340,15 +342,15 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
 
         {revDiff !== null && (
           <View style={[styles.card, { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, backgroundColor: D.card, borderColor: D.cardBorder }]}>
-            <Ionicons name="analytics-outline" size={18} color={TEAL} />
+            <Ionicons name="analytics-outline" size={18} color={primaryColor} />
             <Text style={{ fontSize: 12, color: D.analyticsText, flex: 1 }}>
-              Prihod {revDiff !== null && revDiff >= 0 ? "veći" : "manji"} za{" "}
+              Prihod {revDiff !== null && revDiff >= 0 ? "veÃ„â€¡i" : "manji"} za{" "}
               <Text style={{ fontWeight: "700" }}>{Math.abs(revDiff ?? 0)}%</Text> u odnosu na {periodLabel}
             </Text>
           </View>
         )}
 
-        {/* ── TREND ── */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ TREND Ã¢â€â‚¬Ã¢â€â‚¬ */}
         {period !== "today" && dailyStats.length > 0 && (
           <>
             <SectionTitle title="Trend prihoda" sub={`zadnjih ${dailyStats.length} dana`} />
@@ -356,15 +358,15 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           </>
         )}
 
-        {/* ── HOURLY HEATMAP ── */}
-        <SectionTitle title="Gužva po satu" />
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ HOURLY HEATMAP Ã¢â€â‚¬Ã¢â€â‚¬ */}
+        <SectionTitle title="GuÃ…Â¾va po satu" />
         {stats && Object.keys(stats.hourlyOrderCount).length > 0
           ? <HourlyHeatmap data={stats.hourlyOrderCount} />
           : <EmptyCard label="Nema podataka za ovaj period" />
         }
 
-        {/* ── TOP ITEMS ── */}
-        <SectionTitle title="Top artikli" sub="po količini" />
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ TOP ITEMS Ã¢â€â‚¬Ã¢â€â‚¬ */}
+        <SectionTitle title="Top artikli" sub="po koliÃ„Âini" />
         {topItems.length > 0 ? (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
             {topItems.map(([name, qty], i) => (
@@ -373,7 +375,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <Text style={[styles.rowName, { color: D.rowName }]} numberOfLines={1}>{name}</Text>
-                    <Text style={styles.rowVal}>{qty}×</Text>
+                    <Text style={styles.rowVal}>{qty}Ãƒ—</Text>
                   </View>
                   <MiniBar value={qty} max={maxItem} />
                 </View>
@@ -382,7 +384,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           </View>
         ) : <EmptyCard label="Nema prodatih artikala" />}
 
-        {/* ── KATEGORIJE ── */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ KATEGORIJE Ã¢â€â‚¬Ã¢â€â‚¬ */}
         <SectionTitle title="Prihod po kategorijama" />
         {topCategories.length > 0 ? (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
@@ -406,7 +408,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           </View>
         ) : <EmptyCard label="Nema podataka" />}
 
-        {/* ── KONOBARI ── */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ KONOBARI Ã¢â€â‚¬Ã¢â€â‚¬ */}
         <SectionTitle title="Konobari" sub="rang lista" />
         {topWaiters.length > 0 ? (
           <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
@@ -414,7 +416,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
               const orders = stats?.waiterOrderCount?.[name] ?? 0;
               const totalMs = stats?.waiterTotalCompletionMs?.[name] ?? 0;
               const avgMs = orders > 0 ? totalMs / orders : 0;
-              const avgVal = orders > 0 ? (rev / orders).toFixed(2) : "—";
+              const avgVal = orders > 0 ? (rev / orders).toFixed(2) : "Ã¢â‚¬â€";
               return (
                 <View key={name} style={[styles.row, i < topWaiters.length - 1 && { borderBottomWidth: 1, borderColor: D.rowBorder }]}>
                   <Text style={[styles.rank, { color: D.rank }]}>{i + 1}.</Text>
@@ -425,9 +427,9 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                     </View>
                     <MiniBar value={rev} max={maxWaiter} />
                     <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
-                      <Text style={[styles.sub, { color: D.sub }]}>{orders} narudžbi</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{orders} narudÃ…Â¾bi</Text>
                       <Text style={[styles.sub, { color: D.sub }]}>Pros. {avgVal} KM</Text>
-                      {avgMs > 0 && <Text style={[styles.sub, { color: D.sub }]}>⏱ {fmtMs(avgMs)}</Text>}
+                      {avgMs > 0 && <Text style={[styles.sub, { color: D.sub }]}>Ã¢ÂÂ± {fmtMs(avgMs)}</Text>}
                     </View>
                   </View>
                 </View>
@@ -436,7 +438,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           </View>
         ) : <EmptyCard label="Nema podataka" />}
 
-        {/* ── ZONE / REGIJE ── */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ ZONE / REGIJE Ã¢â€â‚¬Ã¢â€â‚¬ */}
         {topRegions.length > 0 && (
           <>
             <SectionTitle title="Zone / Regije" sub="po prihodu" />
@@ -452,7 +454,7 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                         <Text style={styles.rowVal}>{rev.toFixed(2)} KM</Text>
                       </View>
                       <MiniBar value={rev} max={maxRegion} />
-                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudžbi</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudÃ…Â¾bi</Text>
                     </View>
                   </View>
                 );
@@ -461,10 +463,10 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
           </>
         )}
 
-        {/* ── SEKTORI ── */}
+        {/* Ã¢â€â‚¬Ã¢â€â‚¬ SEKTORI Ã¢â€â‚¬Ã¢â€â‚¬ */}
         {sectorEntries.length > 0 && (
           <>
-            <SectionTitle title="Sektori" sub="prosječno vrijeme izrade" />
+            <SectionTitle title="Sektori" sub="prosjeÃ„Âno vrijeme izrade" />
             <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder }]}>
               {sectorEntries.map(([sectorId, count], i) => {
                 const totalMs = stats?.sectorTotalCompletionMs?.[sectorId] ?? 0;
@@ -478,12 +480,12 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                         <Text style={[styles.rowName, { color: D.rowName }]}>{name}</Text>
                         {avgMs > 0 && (
-                          <Text style={[styles.rowVal, { color: avgMs > 5 * 60_000 ? "#ef4444" : TEAL }]}>
-                            ⏱ {fmtMs(avgMs)}
+                          <Text style={[styles.rowVal, { color: avgMs > 5 * 60_000 ? "#ef4444" : primaryColor }]}>
+                            Ã¢ÂÂ± {fmtMs(avgMs)}
                           </Text>
                         )}
                       </View>
-                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudžbi obrađeno</Text>
+                      <Text style={[styles.sub, { color: D.sub }]}>{count} narudÃ…Â¾bi obraÃ„â€˜eno</Text>
                     </View>
                   </View>
                 );
@@ -495,8 +497,8 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
         {!stats?.ordersCount && !loading && (
           <View style={{ alignItems: "center", marginTop: 32 }}>
             <Ionicons name="bar-chart-outline" size={48} color={D.emptyIcon} />
-            <Text style={{ color: D.emptyTitle, marginTop: 8, fontSize: 14 }}>Nema završenih narudžbi za ovaj period</Text>
-            <Text style={{ color: D.emptySubtitle, fontSize: 12, marginTop: 4 }}>Statistika se puni automatski kako narudžbe budu završene</Text>
+            <Text style={{ color: D.emptyTitle, marginTop: 8, fontSize: 14 }}>Nema zavrÃ…Â¡enih narudÃ…Â¾bi za ovaj period</Text>
+            <Text style={{ color: D.emptySubtitle, fontSize: 12, marginTop: 4 }}>Statistika se puni automatski kako narudÃ…Â¾be budu zavrÃ…Â¡ene</Text>
           </View>
         )}
       </ScrollView>
@@ -504,8 +506,8 @@ export default function AdminDashboard({ placeId, onMenuPress }: Props) {
   );
 }
 
-/* ─────────── STYLES ─────────── */
-const styles = StyleSheet.create({
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ STYLES Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+const makeStyles = (p: string) => StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center",
     backgroundColor: "#fff",
@@ -532,7 +534,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 7,
     borderRadius: 20, borderWidth: 1.5, borderColor: "#ddd",
   },
-  periodBtnActive: { backgroundColor: TEAL, borderColor: TEAL },
+  periodBtnActive: { backgroundColor: p, borderColor: p },
   periodText: { fontSize: 13, fontWeight: "600", color: "#666" },
   periodTextActive: { color: "#fff" },
   refreshBtn: { marginLeft: "auto", padding: 6 },
@@ -543,7 +545,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: "#eee",
     shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
-  kpiValue: { fontSize: 20, fontWeight: "800", color: TEAL },
+  kpiValue: { fontSize: 20, fontWeight: "800", color: p },
   kpiLabel: { fontSize: 11, color: "#aaa", marginTop: 3, fontWeight: "600" },
   sectionTitle: { fontSize: 12, fontWeight: "800", color: "#888", textTransform: "uppercase", letterSpacing: 0.6 },
   card: {
@@ -556,6 +558,7 @@ const styles = StyleSheet.create({
   rowBorder: { borderBottomWidth: 1, borderColor: "#f5f5f5" },
   rank: { fontSize: 12, fontWeight: "700", color: "#ccc", width: 22, paddingTop: 1 },
   rowName: { fontSize: 13, fontWeight: "600", color: "#222", flex: 1, marginRight: 8 },
-  rowVal: { fontSize: 14, fontWeight: "700", color: TEAL },
+  rowVal: { fontSize: 14, fontWeight: "700", color: p },
   sub: { fontSize: 11, color: "#aaa", marginTop: 2 },
 });
+const styles = makeStyles("#0E7C86");

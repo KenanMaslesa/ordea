@@ -1,10 +1,14 @@
 // app/role.tsx
 import { useRouter } from "expo-router";
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTheme } from "./context/ThemeContext";
 import { setItem } from "./helper";
 
 export default function RoleScreen() {
   const router = useRouter();
+  const { primaryColor } = useTheme();
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const selectRole = async (role: "waiter" | "bartender") => {
     await setItem("@role", role);
@@ -24,7 +28,7 @@ export default function RoleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
@@ -33,7 +37,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 32 },
   btn: {
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     padding: 16,
     borderRadius: 12,
     marginVertical: 8,

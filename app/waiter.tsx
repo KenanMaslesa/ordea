@@ -123,9 +123,9 @@ export default function WaiterScreen() {
   const [showOrdersSheet, setShowOrdersSheet] = useState(false);
   const [placeSectors, setPlaceSectors] = useState<Sector[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [headerTheme, setHeaderTheme] = useState<"teal" | "white">("white");
-  const [sheetTheme, setSheetTheme] = useState<"teal" | "white">("white");
-  const { darkMode } = useTheme();
+  const [headerTheme, setHeaderTheme] = useState<"primaryColor" | "white">("white");
+  const [sheetTheme, setSheetTheme] = useState<"primaryColor" | "white">("white");
+  const { darkMode, primaryColor, setPrimaryColor } = useTheme();
 
   const [waiterName, setWaiterName] = useState("");
   const [deviceId, setDeviceId] = useState("");
@@ -181,10 +181,12 @@ export default function WaiterScreen() {
       } catch {}
     });
 
-    // 2. Watch place doc for menuVersion changes only
+    // 2. Watch place doc for menuVersion changes + color sync
     const unsub = onSnapshot(doc(db, placesRoot(), placeId), async placeSnap => {
       if (!placeSnap.exists()) return;
-      const serverVersion: number = placeSnap.data().menuVersion ?? 0;
+      const placeData = placeSnap.data();
+      const serverVersion: number = placeData.menuVersion ?? 0;
+      if (placeData.primaryColor) setPrimaryColor(placeData.primaryColor);
 
       const raw = await getItem("@menuCache");
       const parsed = raw ? JSON.parse(raw) as { version: number; schemaV?: number; menu: DynCat[] } : null;
@@ -192,6 +194,7 @@ export default function WaiterScreen() {
       const cachedSchema: number = parsed ? (parsed.schemaV ?? 1) : 0;
 
       if (serverVersion === cachedVersion && cachedSchema === CACHE_SCHEMA_V) return; // cache is up to date
+
 
       // 3. Cache stale — fetch fresh menu from Firestore
       const q = query(
@@ -250,6 +253,7 @@ export default function WaiterScreen() {
           setTableCount(tc);
           setPlaceSectors(p.sectors ?? []);
           if (zones.length > 0) setSelectedZone(zones[0].name);
+          if (p.primaryColor) setPrimaryColor(p.primaryColor);
         });
       }
 
@@ -278,8 +282,8 @@ export default function WaiterScreen() {
 
       const h = await getItem("@waiterHeaderTheme");
       const s = await getItem("@waiterSheetTheme");
-      if (h === "teal" || h === "white") setHeaderTheme(h);
-      if (s === "teal" || s === "white") setSheetTheme(s);
+      if (h === "primaryColor" || h === "white") setHeaderTheme(h);
+      if (s === "primaryColor" || s === "white") setSheetTheme(s);
     })();
 
     setLoading(false);
@@ -289,17 +293,22 @@ export default function WaiterScreen() {
     (async () => {
       const h = await getItem("@waiterHeaderTheme");
       const s = await getItem("@waiterSheetTheme");
-      if (h === "teal" || h === "white") setHeaderTheme(h);
-      if (s === "teal" || s === "white") setSheetTheme(s);
+      if (h === "primaryColor" || h === "white") setHeaderTheme(h);
+      if (s === "primaryColor" || s === "white") setSheetTheme(s);
     })();
   }, []));
 
   // --- Update header ---
   useLayoutEffect(() => {
+    if (loading) {
+      navigation.setOptions({ headerShown: false });
+      return;
+    }
     navigation.setOptions({
+      headerShown: true,
       headerTitle: () => (
         <Pressable onPress={() => setShowNameModal(true)} hitSlop={10}>
-          <Text style={{ color: headerTheme === "teal" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B", fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>
+          <Text style={{ color: headerTheme === "primaryColor" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B", fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>
             {waiterName || "Postavi ime"}
           </Text>
         </Pressable>
@@ -309,10 +318,12 @@ export default function WaiterScreen() {
         <Pressable onPress={() => setDrawerOpen(true)} style={{ paddingLeft: 8 }} hitSlop={10}>
           <View style={{
             width: 36, height: 36, borderRadius: 10,
-            backgroundColor: headerTheme === "teal" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : "#F0FDFA",
+            backgroundColor: headerTheme === "primaryColor" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : primaryColor + "20",
+            borderWidth: headerTheme !== "primaryColor" && !darkMode ? 1 : 0,
+            borderColor: primaryColor,
             alignItems: "center", justifyContent: "center",
           }}>
-            <Ionicons name="menu" size={20} color={headerTheme === "teal" ? "#fff" : darkMode ? "#E5E7EB" : "#0E7C86"} />
+            <Ionicons name="menu" size={20} color={headerTheme === "primaryColor" ? "#fff" : darkMode ? "#E5E7EB" : primaryColor} />
           </View>
         </Pressable>
       ),
@@ -327,10 +338,12 @@ export default function WaiterScreen() {
             <Pressable onPress={() => setShowOrdersSheet(true)} hitSlop={10}>
               <View style={{
                 width: 36, height: 36, borderRadius: 10,
-                backgroundColor: headerTheme === "teal" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : "#F0FDFA",
+                backgroundColor: headerTheme === "primaryColor" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : primaryColor + "20",
+                borderWidth: headerTheme !== "primaryColor" && !darkMode ? 1 : 0,
+                borderColor: primaryColor,
                 alignItems: "center", justifyContent: "center",
               }}>
-                <Ionicons name="receipt-outline" size={20} color={headerTheme === "teal" ? "#fff" : darkMode ? "#E5E7EB" : "#0E7C86"} />
+                <Ionicons name="receipt-outline" size={20} color={headerTheme === "primaryColor" ? "#fff" : darkMode ? "#E5E7EB" : primaryColor} />
                 {pendingCount > 0 && (
                   <View style={{
                     position: "absolute", top: -4, right: -4,
@@ -356,31 +369,21 @@ export default function WaiterScreen() {
               </View>
             </Pressable>
 
-            {/* Settings */}
-            <Pressable onPress={() => router.push("/waiter-settings")} hitSlop={10}>
-              <View style={{
-                width: 36, height: 36, borderRadius: 10,
-                backgroundColor: headerTheme === "teal" ? "rgba(255,255,255,0.18)" : darkMode ? "#374151" : "#F0FDFA",
-                alignItems: "center", justifyContent: "center",
-              }}>
-                <Ionicons name="settings-outline" size={20} color={headerTheme === "teal" ? "#fff" : darkMode ? "#E5E7EB" : "#0E7C86"} />
-              </View>
-            </Pressable>
           </View>
         )
       },
       headerStyle: {
-        backgroundColor: headerTheme === "teal" ? "#0E7C86" : darkMode ? "#1F2937" : "#fff",
-        shadowColor: headerTheme === "teal" ? "#0E7C86" : "#000",
+        backgroundColor: headerTheme === "primaryColor" ? primaryColor : darkMode ? "#1F2937" : "#fff",
+        shadowColor: headerTheme === "primaryColor" ? primaryColor : "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.08,
         shadowRadius: 4,
         elevation: 3,
       },
-      headerShadowVisible: !darkMode && headerTheme !== "teal",
-      headerTintColor: headerTheme === "teal" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B",
+      headerShadowVisible: !darkMode && headerTheme !== "primaryColor",
+      headerTintColor: headerTheme === "primaryColor" ? "#fff" : darkMode ? "#F9FAFB" : "#18181B",
     });
-  }, [navigation, waiterName, myOrders, headerTheme, darkMode]);
+  }, [navigation, waiterName, myOrders, headerTheme, darkMode, primaryColor, loading]);
 
   // --- Badge animation ---
   const animateBadge = (id: string) => {
@@ -545,31 +548,38 @@ export default function WaiterScreen() {
     </BottomSheetBackdrop>
   );
 
-  if (loading) return <ActivityIndicator size={"large"} style={{ flex: 1 }} />;
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
+
+  if (loading) return (
+    <View style={{ flex: 1, backgroundColor: darkMode ? "#111827" : "#F9FAFB", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <ActivityIndicator size="large" color={primaryColor} />
+      <Text style={{ fontSize: 14, color: darkMode ? "#9CA3AF" : "#6B7280", fontWeight: "500" }}>Učitavanje...</Text>
+    </View>
+  );
 
   // --- Sheet color tokens based on sheetTheme ---
-  const SC = sheetTheme === "teal" ? {
-    bg: "#0E7C86",
+  const SC = sheetTheme === "primaryColor" ? {
+    bg: primaryColor,
     handle: "#fff",
-    headerBg: "#0E7C86",
+    headerBg: primaryColor,
     headerBorder: "rgba(255,255,255,0.2)" as const,
     title: "#fff",
     rowBorder: "rgba(255,255,255,0.15)" as const,
-    cat: "#cce8eb",
+    cat: "rgba(255,255,255,0.75)",
     name: "#fff",
     qty: "#fff",
     price: "#fff",
     qtyBtnBg: "#fff",
     qtyBtnBorder: "transparent" as const,
-    qtyBtnText: "#0E7C86",
+    qtyBtnText: primaryColor,
     totalText: "#fff",
     btnBg: "#fff",
-    btnText: "#0E7C86",
+    btnText: primaryColor,
     noteBg: "rgba(255,255,255,0.15)" as const,
     noteText: "#fff",
     noteBorder: "rgba(255,255,255,0.3)" as const,
     notePlaceholder: "rgba(255,255,255,0.5)" as const,
-    shadow: "#0E7C86",
+    shadow: primaryColor,
     zoneBg: "rgba(255,255,255,0.2)" as const,
     zoneText: "#fff",
   } : darkMode ? {
@@ -585,9 +595,9 @@ export default function WaiterScreen() {
     price: "#F9FAFB",
     qtyBtnBg: "#374151",
     qtyBtnBorder: "#4B5563" as const,
-    qtyBtnText: "#0E7C86",
+    qtyBtnText: primaryColor,
     totalText: "#F9FAFB",
-    btnBg: "#0E7C86",
+    btnBg: primaryColor,
     btnText: "#fff",
     noteBg: "#374151" as const,
     noteText: "#F9FAFB",
@@ -595,31 +605,31 @@ export default function WaiterScreen() {
     notePlaceholder: "#6B7280" as const,
     shadow: "#000",
     zoneBg: "#374151" as const,
-    zoneText: "#0E7C86",
+    zoneText: primaryColor,
   } : {
     bg: "#fff",
-    handle: "#0E7C86",
-    headerBg: "#F0FDFA",
+    handle: primaryColor,
+    headerBg: primaryColor + "12",
     headerBorder: "#E4E4E7" as const,
-    title: "#0E7C86",
+    title: primaryColor,
     rowBorder: "#F4F4F5" as const,
     cat: "#71717A",
     name: "#18181B",
     qty: "#18181B",
     price: "#18181B",
-    qtyBtnBg: "#F0FDFA",
-    qtyBtnBorder: "#99E6EC" as const,
-    qtyBtnText: "#0E7C86",
+    qtyBtnBg: primaryColor + "12",
+    qtyBtnBorder: primaryColor + "40" as const,
+    qtyBtnText: primaryColor,
     totalText: "#18181B",
-    btnBg: "#0E7C86",
+    btnBg: primaryColor,
     btnText: "#fff",
     noteBg: "#FAFAFA" as const,
     noteText: "#18181B",
     noteBorder: "#E4E4E7" as const,
     notePlaceholder: "#aaa" as const,
-    shadow: "#0E7C86",
+    shadow: primaryColor,
     zoneBg: "#fff" as const,
-    zoneText: "#0E7C86",
+    zoneText: primaryColor,
   };
 
   // --- Dark mode tokens ---
@@ -680,19 +690,26 @@ export default function WaiterScreen() {
             return (
               <Pressable
                 onPress={() => scrollToCategory(index)}
-                style={[styles.categoryBtn, active && styles.categoryActive]}
+                style={[
+                  styles.categoryBtn,
+                  active && {
+                    backgroundColor: darkMode ? primaryColor + "35" : primaryColor + "18",
+                    borderWidth: 1,
+                    borderColor: primaryColor,
+                  },
+                ]}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                   {item.emoji?.includes("-") ? (
                     <Ionicons
                       name={item.emoji as keyof typeof Ionicons.glyphMap}
                       size={14}
-                      color={active ? "#fff" : DM.catText}
+                      color={active ? primaryColor : DM.catText}
                     />
                   ) : item.emoji ? (
-                    <Text style={{ color: active ? "#fff" : DM.catText }}>{item.emoji}</Text>
+                    <Text style={{ color: active ? primaryColor : DM.catText }}>{item.emoji}</Text>
                   ) : null}
-                  <Text style={{ color: active ? "#fff" : DM.catText, fontWeight: active ? "800" : "600" }}>
+                  <Text style={{ color: active ? primaryColor : DM.catText, fontWeight: active ? "800" : "600" }}>
                     {item.name}
                   </Text>
                 </View>
@@ -704,7 +721,7 @@ export default function WaiterScreen() {
       <View style={{ height: 1, backgroundColor: DM.catBorder }} />
       {dynamicMenu.length === 0 ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size="large" color="#0E7C86" />
+          <ActivityIndicator size="large" color={primaryColor} />
         </View>
       ) : (
       <FlatList
@@ -743,7 +760,7 @@ export default function WaiterScreen() {
                         onPress={() => addItem(item, sub.name)}
                         style={[
                           styles.itemCard,
-                          { backgroundColor: selected ? "#0E7C86" : DM.cardBg },
+                          { backgroundColor: selected ? primaryColor : DM.cardBg },
                         ]}
                       >
                         <Text
@@ -945,7 +962,7 @@ export default function WaiterScreen() {
                     onPress={() => { setSelectedZone(z.name); setShowZoneSheet(false); }}
                     style={styles.regionBtn}
                   >
-                    <Text style={[styles.regionText, { color: DM.cardText }, z.name === selectedZone && { fontWeight: "bold", color: "#0E7C86" }]}>
+                    <Text style={[styles.regionText, { color: DM.cardText }, z.name === selectedZone && { fontWeight: "bold", color: primaryColor }]}>
                       {z.name}
                     </Text>
                   </Pressable>
@@ -1050,11 +1067,11 @@ export default function WaiterScreen() {
 }
 
 // --- Styles (ostavljam tvoje originalne) ---
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   adminBackBtn: {
     position: "absolute", top: 12, left: 12, zIndex: 99,
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#0E7C86", borderRadius: 20,
+    backgroundColor: p, borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 7,
     shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 4, elevation: 4,
   },
@@ -1076,7 +1093,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderRadius: 20,
   },
-  categoryActive: { backgroundColor: "#0E7C86" },
+  categoryActive: { backgroundColor: p },
   subTitle: { fontSize: 18, fontWeight: "800", margin: 12 },
   itemsGrid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 8 },
   itemCard: {
@@ -1086,7 +1103,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     margin: "1%",
   },
-  itemCardActive: { backgroundColor: "#0E7C86" },
+  itemCardActive: { backgroundColor: p },
   itemName: { fontWeight: "700" },
   itemPrice: { marginTop: 6, color: "#555" },
   badge: {
@@ -1103,14 +1120,14 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     alignItems: "center",
     justifyContent: "center",
   },
   badgeMinusText: { color: "#fff", fontWeight: "900" },
   badgeQty: {
     marginLeft: 6,
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -1130,13 +1147,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderColor: "#E4E4E7",
-    backgroundColor: "#F0FDFA",
+    backgroundColor: p + "12",
     marginHorizontal: -16,
     paddingHorizontal: 20,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },
-  sheetTitle: { color: "#0E7C86", fontWeight: "800", fontSize: 15 },
+  sheetTitle: { color: p, fontWeight: "800", fontSize: 15 },
   orderRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1149,7 +1166,7 @@ const styles = StyleSheet.create({
   orderName: { color: "#18181B", fontWeight: "700", fontSize: 14 },
   orderControls: { flexDirection: "row", alignItems: "center" },
   qtyBtn: {
-    backgroundColor: "#F0FDFA",
+    backgroundColor: p + "12",
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -1157,9 +1174,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginHorizontal: 5,
     borderWidth: 1.5,
-    borderColor: "#99E6EC",
+    borderColor: p + "50",
   },
-  qtyBtnText: { color: "#0E7C86", fontWeight: "800", fontSize: 16, includeFontPadding: false, textAlignVertical: "center", textAlign: "center" },
+  qtyBtnText: { color: p, fontWeight: "800", fontSize: 16, includeFontPadding: false, textAlignVertical: "center", textAlign: "center" },
   qty: { color: "#18181B", fontWeight: "700", marginHorizontal: 4 },
   orderPrice: { color: "#18181B", marginLeft: 8, fontWeight: "700" },
   noteInput: {
@@ -1179,7 +1196,7 @@ const styles = StyleSheet.create({
   },
   totalText: { color: "#18181B", fontWeight: "800", fontSize: 18 },
   nextBtn: {
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -1206,7 +1223,7 @@ const styles = StyleSheet.create({
     borderRadius: 20, borderWidth: 1.5, borderColor: "#ddd",
     marginRight: 8, backgroundColor: "#fff",
   },
-  zoneTabActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  zoneTabActive: { backgroundColor: p, borderColor: p },
   zoneTabText: { fontSize: 14, fontWeight: "600", color: "#555" },
   zoneTabTextActive: { color: "#fff" },
   tableGrid: {
@@ -1217,7 +1234,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5", borderWidth: 1.5, borderColor: "#e5e5e5",
     alignItems: "center", justifyContent: "center",
   },
-  tableCellActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  tableCellActive: { backgroundColor: p, borderColor: p },
   tableCellText: { fontSize: 16, fontWeight: "700", color: "#333" },
   tableCellTextActive: { color: "#fff" },
 });

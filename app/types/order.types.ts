@@ -74,6 +74,7 @@ export interface Place {
   tableCount: number;
   sectors: Sector[];
   createdAt: number;
+  primaryColor?: string;
 }
 
 export interface MenuNode {

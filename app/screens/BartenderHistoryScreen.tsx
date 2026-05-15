@@ -167,7 +167,7 @@ export default function BartenderHistoryScreen({ placeId, mySectorIds, sectors, 
 
       {/* ── LIST ── */}
       {loading ? (
-        <ActivityIndicator size="large" color="#0E7C86" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={C.primary} style={{ marginTop: 40 }} />
       ) : (
       <ScrollView
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}

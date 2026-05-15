@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { db, placesRoot } from "../firebase";
 import SideDrawer from "./components/SideDrawer";
 import { useTheme } from "./context/ThemeContext";
-import { getItem, setItem } from "./helper";
+import { getItem } from "./helper";
 import useAuth from "./hooks/useAuth";
 import BartenderHistoryScreen from "./screens/BartenderHistoryScreen";
 import OrderCard from "./screens/components/OrderCard";
@@ -103,7 +103,7 @@ export default function Bartender() {
   useAuth("bartender");
 
   const router = useRouter();
-  const { darkMode, setDarkMode } = useTheme();
+  const { darkMode, setDarkMode, primaryColor, setPrimaryColor } = useTheme();
   const insets = useSafeAreaInsets();
   const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -125,7 +125,7 @@ export default function Bartender() {
 
   const soundRef = useRef<Audio.Sound | null>(null);
 
-  const C = darkMode ? DARK : LIGHT;
+  const C = { ...(darkMode ? DARK : LIGHT), primary: primaryColor };
 
   /* ---------- LOAD STORAGE ---------- */
 
@@ -144,7 +144,10 @@ export default function Bartender() {
   useEffect(() => {
     if (!placeId) return;
     const unsub = onSnapshot(doc(db, placesRoot(), placeId), d => {
-      if (d.exists()) setSectors((d.data().sectors as Sector[]) ?? []);
+      if (d.exists()) {
+        setSectors((d.data().sectors as Sector[]) ?? []);
+        if (d.data().primaryColor) setPrimaryColor(d.data().primaryColor);
+      }
     });
     return unsub;
   }, [placeId]);

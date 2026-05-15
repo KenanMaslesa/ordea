@@ -1,10 +1,11 @@
 import { db, placesRoot } from "@/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -14,8 +15,24 @@ import {
   TextInput,
   View
 } from "react-native";
+import ColorPicker, { HueSlider, Panel1, Preview } from "reanimated-color-picker";
 import { useTheme } from "../../context/ThemeContext";
 import { LocationMode, Place, Sector, Zone } from "../../types/order.types";
+
+const PRESET_COLORS = [
+  { hex: "#0891B2", label: "Plava" },
+  { hex: "#0E7C86", label: "Teal" },
+  { hex: "#059669", label: "Zelena" },
+  { hex: "#16A34A", label: "Šuma" },
+  { hex: "#2563EB", label: "Kobalt" },
+  { hex: "#4F46E5", label: "Indigo" },
+  { hex: "#7C3AED", label: "Ljubičasta" },
+  { hex: "#9333EA", label: "Vijoleta" },
+  { hex: "#EC4899", label: "Roza" },
+  { hex: "#E11D48", label: "Crvena" },
+  { hex: "#EA580C", label: "Narandžasta" },
+  { hex: "#D97706", label: "Zlatna" },
+];
 
 const SECTOR_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
   "restaurant-outline", "cafe-outline", "pizza-outline", "fast-food-outline",
@@ -44,7 +61,7 @@ const MODE_OPTIONS: { value: LocationMode; label: string; desc: string }[] = [
 ];
 
 export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor, setPrimaryColor } = useTheme();
 
   const D = darkMode ? {
     root: "#111827",
@@ -118,6 +135,8 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
     unsavedBannerText: "#856404",
   };
 
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
+
   const [place, setPlace] = useState<Place | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>("zones");
   const [zones, setZones] = useState<Zone[]>([]);
@@ -127,8 +146,20 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
   const [dirty, setDirty] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState<string | null>(null);
+  const [colorPickerVisible, setColorPickerVisible] = useState(false);
+  const [pendingColor, setPendingColor] = useState(primaryColor);
   const savedOpacity = useRef(new Animated.Value(0)).current;
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isValidHex = (h: string) => /^#[0-9A-Fa-f]{6}$/.test(h);
+
+  const applyColor = async (hex: string) => {
+    if (!isValidHex(hex)) return;
+    setPrimaryColor(hex);
+    if (placeId) {
+      try { await updateDoc(doc(db, placesRoot(), placeId), { primaryColor: hex }); } catch {}
+    }
+  };
 
   const showSavedBanner = () => {
     setSavedMsg(true);
@@ -215,7 +246,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: D.root }}>
-      {/* ── HEADER ── */}
+      {/* â”€â”€ HEADER â”€â”€ */}
       <View style={{
         flexDirection: "row", alignItems: "center",
         backgroundColor: D.headerBg,
@@ -226,7 +257,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
       }}>
         <Pressable onPress={onMenuPress} hitSlop={12} style={{ padding: 6 }}>
           <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: D.hamburgerBox, alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="menu" size={20} color="#0E7C86" />
+            <Ionicons name="menu" size={20} color={primaryColor} />
           </View>
         </Pressable>
         <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: D.headerTitle, letterSpacing: -0.3 }}>Postavke</Text>
@@ -272,13 +303,13 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
           <Pressable
             key={opt.value}
             onPress={() => { setLocationMode(opt.value); setDirty(true); }}
-            style={[styles.modeCard, { backgroundColor: D.modeCard, borderColor: locationMode === opt.value ? "#0E7C86" : D.modeCardBorder }, locationMode === opt.value && styles.modeCardActive]}
+            style={[styles.modeCard, { backgroundColor: D.modeCard, borderColor: locationMode === opt.value ? primaryColor : D.modeCardBorder }, locationMode === opt.value && styles.modeCardActive]}
           >
-            <View style={[styles.modeRadio, { borderColor: locationMode === opt.value ? "#0E7C86" : D.modeRadioBorder }]}>
+            <View style={[styles.modeRadio, { borderColor: locationMode === opt.value ? primaryColor : D.modeRadioBorder }]}>
               {locationMode === opt.value && <View style={styles.modeRadioDot} />}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.modeLabel, { color: locationMode === opt.value ? "#0E7C86" : D.modeLabel }]}>
+              <Text style={[styles.modeLabel, { color: locationMode === opt.value ? primaryColor : D.modeLabel }]}>
                 {opt.label}
               </Text>
               <Text style={[styles.modeDesc, { color: D.modeDesc }]}>{opt.desc}</Text>
@@ -371,7 +402,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
                 <Ionicons
                   name={(s.icon as keyof typeof Ionicons.glyphMap) || "wine-outline"}
                   size={22}
-                  color="#0E7C86"
+                  color={primaryColor}
                 />
               </Pressable>
               <TextInput
@@ -419,6 +450,119 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
           <Text style={styles.addBtnText}>+ Dodaj sektor</Text>
         </Pressable>
 
+        {/* â”€â”€ Boja aplikacije â”€â”€ */}
+        <View style={[styles.card, { backgroundColor: D.card, borderColor: D.cardBorder, marginTop: 20 }]}>
+          <Text style={[styles.cardTitle, { color: D.cardTitle }]}>Boja aplikacije</Text>
+          <Text style={[styles.sectionHint, { color: D.sectionHint, marginBottom: 14 }]}>
+            Odaberite boju koja odgovara vašem brendu. Promjena je trenutna.
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {PRESET_COLORS.map(({ hex, label }) => {
+              const active = primaryColor === hex;
+              return (
+                <Pressable
+                  key={hex}
+                  onPress={async () => {
+                    await applyColor(hex);
+                  }}
+                  style={{ alignItems: "center", gap: 4 }}
+                >
+                  <View style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    backgroundColor: hex,
+                    borderWidth: active ? 3 : 2,
+                    borderColor: active ? (darkMode ? "#fff" : "#111") : "transparent",
+                    shadowColor: hex, shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: active ? 0.6 : 0.2, shadowRadius: 4, elevation: active ? 6 : 2,
+                    alignItems: "center", justifyContent: "center",
+                  }}>
+                    {active && <Ionicons name="checkmark" size={20} color="#fff" />}
+                  </View>
+                  <Text style={{ fontSize: 10, color: D.sectionHint, fontWeight: active ? "700" : "400" }}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Custom color picker button */}
+          <Pressable
+            onPress={() => { setPendingColor(primaryColor); setColorPickerVisible(true); }}
+            style={{
+              marginTop: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              borderWidth: 1.5,
+              borderColor: !PRESET_COLORS.some(c => c.hex === primaryColor) ? primaryColor : (darkMode ? "#4B5563" : "#D1D5DB"),
+              borderRadius: 12,
+              padding: 12,
+              backgroundColor: !PRESET_COLORS.some(c => c.hex === primaryColor) ? primaryColor + "15" : "transparent",
+            }}
+          >
+            <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: primaryColor }} />
+            <Text style={{ flex: 1, fontSize: 14, fontWeight: "600", color: D.infoText }}>
+              Prilagođena boja
+            </Text>
+            {!PRESET_COLORS.some(c => c.hex === primaryColor) && (
+              <Text style={{ fontSize: 12, fontWeight: "700", color: primaryColor }}>
+                {primaryColor.toUpperCase()}
+              </Text>
+            )}
+            <Ionicons name="chevron-forward" size={16} color={D.sectionHint} />
+          </Pressable>
+        </View>
+
+        {/* ── Color Picker Modal ── */}
+        <Modal
+          visible={colorPickerVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setColorPickerVisible(false)}
+        >
+          <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
+            <View style={{
+              backgroundColor: darkMode ? "#1F2937" : "#fff",
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              padding: 24,
+              paddingBottom: 36,
+              gap: 16,
+            }}>
+              <Text style={{ fontSize: 17, fontWeight: "700", color: darkMode ? "#F9FAFB" : "#18181B", marginBottom: 4 }}>
+                Odaberi boju
+              </Text>
+              <ColorPicker
+                value={pendingColor}
+                onComplete={({ hex }) => setPendingColor(hex)}
+                style={{ gap: 12 }}
+              >
+                <Preview />
+                <Panel1 style={{ borderRadius: 12, height: 200 }} />
+                <HueSlider style={{ borderRadius: 12, height: 28 }} />
+              </ColorPicker>
+              <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+                <Pressable
+                  onPress={() => setColorPickerVisible(false)}
+                  style={{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: darkMode ? "#4B5563" : "#D1D5DB", alignItems: "center" }}
+                >
+                  <Text style={{ fontWeight: "600", color: darkMode ? "#E5E7EB" : "#555" }}>Odustani</Text>
+                </Pressable>
+                <Pressable
+                  onPress={async () => {
+                    await applyColor(pendingColor);
+                    setColorPickerVisible(false);
+                  }}
+                  style={{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: pendingColor, alignItems: "center" }}
+                >
+                  <Text style={{ fontWeight: "700", color: "#fff" }}>Potvrdi</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <Pressable
           onPress={handleSave}
           disabled={saving || !dirty}
@@ -431,7 +575,7 @@ export default function AdminPlaceSettings({ placeId, onMenuPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   unsavedBanner: {
     backgroundColor: "#fff3cd",
     borderBottomWidth: 1,
@@ -461,7 +605,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 13, fontWeight: "700", color: "#888", marginBottom: 8, textTransform: "uppercase" },
   infoRow: { fontSize: 15, color: "#333", marginBottom: 4 },
   infoLabel: { fontWeight: "600", color: "#555" },
-  joinCode: { fontSize: 20, fontWeight: "800", color: "#0E7C86", letterSpacing: 3 },
+  joinCode: { fontSize: 20, fontWeight: "800", color: p, letterSpacing: 3 },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: "#222", marginTop: 20, marginBottom: 4 },
   sectionHint: { fontSize: 12, color: "#888", marginBottom: 12 },
   modeCard: {
@@ -475,15 +619,15 @@ const styles = StyleSheet.create({
     borderColor: "#e5e5e5",
     gap: 12,
   },
-  modeCardActive: { borderColor: "#0E7C86", backgroundColor: "#f0fafb" },
+  modeCardActive: { borderColor: p, backgroundColor: "#f0fafb" },
   modeRadio: {
     width: 20, height: 20, borderRadius: 10,
     borderWidth: 2, borderColor: "#ccc",
     alignItems: "center", justifyContent: "center",
   },
-  modeRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#0E7C86" },
+  modeRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: p },
   modeLabel: { fontSize: 15, fontWeight: "600", color: "#444" },
-  modeLabelActive: { color: "#0E7C86" },
+  modeLabelActive: { color: p },
   modeDesc: { fontSize: 12, color: "#888", marginTop: 2 },
   zoneCard: {
     backgroundColor: "#fff", borderRadius: 10, borderWidth: 1,
@@ -494,12 +638,12 @@ const styles = StyleSheet.create({
     alignItems: "center", backgroundColor: "#f0fafb",
     borderRadius: 8, borderWidth: 1, borderColor: "#b2dfdf", paddingHorizontal: 8, paddingVertical: 4,
   },
-  tableCountLabel: { fontSize: 10, color: "#0E7C86", fontWeight: "600", marginBottom: 2 },
-  tableCountInput: { fontSize: 16, fontWeight: "700", color: "#0E7C86", width: 48, textAlign: "center" },
+  tableCountLabel: { fontSize: 10, color: p, fontWeight: "600", marginBottom: 2 },
+  tableCountInput: { fontSize: 16, fontWeight: "700", color: p, width: 48, textAlign: "center" },
   sectorRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   sectorIconBtn: {
     width: 44, height: 44, borderRadius: 10,
-    backgroundColor: "#e8f8f9", borderWidth: 1.5, borderColor: "#0E7C86",
+    backgroundColor: "#e8f8f9", borderWidth: 1.5, borderColor: p,
     alignItems: "center", justifyContent: "center",
   },
   iconPickerScroll: {
@@ -511,7 +655,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: "#ddd",
     alignItems: "center", justifyContent: "center", backgroundColor: "#fff",
   },
-  iconPickerItemActive: { backgroundColor: "#0E7C86", borderColor: "#0E7C86" },
+  iconPickerItemActive: { backgroundColor: p, borderColor: p },
   input: {
     borderWidth: 1, borderColor: "#ddd", borderRadius: 8,
     padding: 12, fontSize: 15, backgroundColor: "#fff", marginBottom: 4,
@@ -519,10 +663,10 @@ const styles = StyleSheet.create({
   removeBtn: { backgroundColor: "#fee2e2", borderRadius: 8, padding: 10 },
   removeBtnText: { color: "#c0392b", fontWeight: "700" },
   addBtn: { paddingVertical: 8 },
-  addBtnText: { color: "#0E7C86", fontWeight: "600", fontSize: 14 },
+  addBtnText: { color: p, fontWeight: "600", fontSize: 14 },
   tablePreview: { fontSize: 12, color: "#888", marginBottom: 4 },
   saveBtn: {
-    backgroundColor: "#0E7C86", borderRadius: 12,
+    backgroundColor: p, borderRadius: 12,
     padding: 16, alignItems: "center", marginTop: 28,
   },
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },

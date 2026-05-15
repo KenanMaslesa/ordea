@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Animated,
     Modal,
@@ -28,7 +28,7 @@ interface SideDrawerProps {
   sectors?: Sector[];
   currentSectorIds?: string[];
   onNameChange?: (name: string) => void;
-  /** Pass when admin is in waiter/bartender preview mode — shows "← Admin" button */
+  /** Pass when admin is in waiter/bartender preview mode — shows "â† Admin" button */
   isAdminPreview?: boolean;
   /** Called when user taps Postavke — caller navigates to settings screen */
   onSettingsPress?: () => void;
@@ -49,7 +49,7 @@ export default function SideDrawer({
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-DRAWER_W)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
-  const { darkMode, setDarkMode } = useTheme();
+  const { darkMode, setDarkMode, primaryColor } = useTheme();
 
   const D = darkMode ? {
     drawer: "#1F2937",
@@ -62,7 +62,7 @@ export default function SideDrawer({
     menuItemActive: "rgba(14,124,134,0.18)",
     closeIcon: "#9CA3AF",
     nameText: "#F9FAFB",
-    nameInputBorder: "#0E7C86",
+    nameInputBorder: primaryColor,
     nameInputText: "#F9FAFB",
     nameInputPlaceholder: "#6B7280",
   } : {
@@ -76,10 +76,12 @@ export default function SideDrawer({
     menuItemActive: "#F0FDFA",
     closeIcon: "#71717A",
     nameText: "#09090B",
-    nameInputBorder: "#0E7C86",
+    nameInputBorder: primaryColor,
     nameInputText: "#09090B",
     nameInputPlaceholder: "#A1A1AA",
   };
+
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const [adminName, setAdminName] = useState("");
   const [editingName, setEditingName] = useState(false);
@@ -194,7 +196,7 @@ export default function SideDrawer({
                     onSubmitEditing={saveName}
                   />
                   <Pressable onPress={saveName} hitSlop={10}>
-                    <Ionicons name="checkmark-circle" size={22} color="#0E7C86" />
+                    <Ionicons name="checkmark-circle" size={22} color={primaryColor} />
                   </Pressable>
                 </View>
               ) : (
@@ -222,14 +224,14 @@ export default function SideDrawer({
             <>
               {isAdminPreview && (
                 <>
-                  <Pressable style={styles.menuItem} onPress={goAdmin}>
-                    <View style={[styles.menuIcon, { backgroundColor: "#F4F4F5" }]}>
-                      <Ionicons name="grid-outline" size={18} color="#52525B" />
+                  <Pressable style={[styles.menuItem, { backgroundColor: darkMode ? "#0D3A3E" : "#E6F7F8", borderRadius: 10, borderWidth: 1, borderColor: darkMode ? primaryColor : "#A7DCE0" }]} onPress={goAdmin}>
+                    <View style={[styles.menuIcon, { backgroundColor: darkMode ? primaryColor : primaryColor }]}>
+                      <Ionicons name="grid-outline" size={18} color="#fff" />
                     </View>
-                    <Text style={styles.menuItemText}>Admin panel</Text>
-                    <Ionicons name="chevron-forward" size={15} color="#D4D4D8" />
+                    <Text style={[styles.menuItemText, { color: darkMode ? "#5EEAD4" : primaryColor, fontWeight: "700" }]}>Admin panel</Text>
+                    <Ionicons name="chevron-forward" size={15} color={darkMode ? "#5EEAD4" : primaryColor} />
                   </Pressable>
-                  <View style={styles.divider} />
+                  <View style={[styles.divider, { backgroundColor: D.divider }]} />
                 </>
               )}
 
@@ -251,7 +253,7 @@ export default function SideDrawer({
                 >
                   <View style={[styles.menuIcon, { backgroundColor: "#EFF6FF" }]}>
                     <Ionicons
-                      name={(s.emoji as keyof typeof Ionicons.glyphMap) ?? "storefront-outline"}
+                      name={(s.icon as keyof typeof Ionicons.glyphMap) ?? "storefront-outline"}
                       size={18}
                       color="#2563EB"
                     />
@@ -280,7 +282,7 @@ export default function SideDrawer({
             <Switch
               value={darkMode}
               onValueChange={setDarkMode}
-              trackColor={{ false: "#D1D5DB", true: "#0E7C86" }}
+              trackColor={{ false: "#D1D5DB", true: primaryColor }}
               thumbColor="#fff"
               ios_backgroundColor="#D1D5DB"
             />
@@ -288,7 +290,7 @@ export default function SideDrawer({
           {onSettingsPress && (
             <Pressable style={styles.menuItem} onPress={() => { onClose(); onSettingsPress(); }}>
               <View style={[styles.menuIcon, { backgroundColor: "#F0FDFA" }]}>
-                <Ionicons name="settings-outline" size={18} color="#0E7C86" />
+                <Ionicons name="settings-outline" size={18} color={primaryColor} />
               </View>
               <Text style={[styles.menuItemText, { color: D.menuItemText }]}>Postavke</Text>
             </Pressable>
@@ -342,7 +344,7 @@ export default function SideDrawer({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   drawer: {
     position: "absolute",
     top: 0,
@@ -368,7 +370,7 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0E7C86",
+    color: p,
     letterSpacing: -0.5,
   },
   profileSection: {
@@ -385,7 +387,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
   nameInput: {
     flex: 1,
     borderBottomWidth: 1.5,
-    borderBottomColor: "#0E7C86",
+    borderBottomColor: p,
     paddingVertical: 2,
     fontSize: 15,
     color: "#09090B",
@@ -421,7 +423,7 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#0E7C86",
+    color: p,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     marginRight: 2,
   },
   divider: {

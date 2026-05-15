@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 import { useMyOrders } from "../hooks/useMyOrders";
 
 interface Props {
@@ -16,7 +17,6 @@ interface Props {
   darkMode?: boolean;
 }
 
-const TEAL = "#0E7C86";
 
 const formatElapsed = (ms: number) => {
   const s = Math.floor(ms / 1000);
@@ -30,6 +30,8 @@ const formatElapsed = (ms: number) => {
 
 export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = false }: Props) {
   const { myOrders, timeNow, removeOrder, removeAllDone } = useMyOrders(placeId, waiterId);
+  const { primaryColor } = useTheme();
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
   const [activeTab, setActiveTab] = useState<"pending" | "done">("pending");
 
   const D = {
@@ -53,7 +55,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
     emptyIcon:   darkMode ? "#4B5563" : "#d1d5db",
     emptyTitle:  darkMode ? "#9ca3af" : "#374151",
     emptySubtitle: darkMode ? "#6b7280" : "#9ca3af",
-    price:       darkMode ? "#F9FAFB" : TEAL,
+    price:       darkMode ? "#F9FAFB" : primaryColor,
     removeBtnText: darkMode ? "#6b7280" : "#9ca3af",
     clearAllBg:  darkMode ? "#374151" : "#fff",
     clearAllText: darkMode ? "#f87171" : "#ef4444",
@@ -96,7 +98,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
         {/* Header row */}
         <View style={styles.cardTop}>
           <View style={styles.cardTopLeft}>
-            <View style={[styles.indexBadge, { backgroundColor: isPending ? TEAL : "#22c55e" }]}>
+            <View style={[styles.indexBadge, { backgroundColor: isPending ? primaryColor : "#22c55e" }]}>
               <Text style={styles.indexText}>{index + 1}</Text>
             </View>
             {!!order.region && (
@@ -189,7 +191,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
 
   return (
     <View style={[styles.root, { backgroundColor: D.root }]}>
-      {/* ── Header ── */}
+      {/* â”€â”€ Header â”€â”€ */}
       <View style={[styles.header, { backgroundColor: D.header, borderBottomColor: D.headerBorder }]}>
         <View style={{ width: 32 }} />
         <Text style={[styles.headerTitle, { color: D.title }]}>Moje narudžbe</Text>
@@ -214,7 +216,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
               </Text>
               {count > 0 && (
                 <View style={[styles.tabBadge, active ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
-                  <Text style={[styles.tabBadgeText, active && { color: TEAL }]}>{count}</Text>
+                  <Text style={[styles.tabBadgeText, active && { color: primaryColor }]}>{count}</Text>
                 </View>
               )}
             </Pressable>
@@ -259,7 +261,7 @@ export default function MyOrdersScreen({ waiterId, placeId, onClose, darkMode = 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F4F5F7" },
 
   header: {
@@ -288,9 +290,9 @@ const styles = StyleSheet.create({
     gap: 8, paddingVertical: 14,
     borderBottomWidth: 2, borderBottomColor: "transparent",
   },
-  tabBtnActive: { borderBottomColor: TEAL },
+  tabBtnActive: { borderBottomColor: p },
   tabLabel: { fontSize: 14, fontWeight: "600", color: "#6b7280" },
-  tabLabelActive: { color: TEAL, fontWeight: "700" },
+  tabLabelActive: { color: p, fontWeight: "700" },
   tabBadge: {
     minWidth: 20, height: 20, borderRadius: 10,
     alignItems: "center", justifyContent: "center", paddingHorizontal: 6,
@@ -384,7 +386,7 @@ const styles = StyleSheet.create({
     marginTop: 12, paddingTop: 10,
     borderTopWidth: 1, borderTopColor: "#f3f4f6",
   },
-  price: { fontSize: 16, fontWeight: "800", color: TEAL },
+  price: { fontSize: 16, fontWeight: "800", color: p },
   removeBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
     paddingHorizontal: 10, paddingVertical: 5,

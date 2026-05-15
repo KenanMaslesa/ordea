@@ -1,3 +1,4 @@
+import { PRIMARY } from "@/theme";
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { Appearance } from "react-native";
 import { getItem, setItem } from "../helper";
@@ -5,18 +6,23 @@ import { getItem, setItem } from "../helper";
 interface ThemeContextType {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
+  /** Brand colour — loaded from AsyncStorage, editable by admin. */
+  primaryColor: string;
+  setPrimaryColor: (color: string) => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   darkMode: false,
   setDarkMode: () => {},
+  primaryColor: PRIMARY,
+  setPrimaryColor: async () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkModeState] = useState(
     Appearance.getColorScheme() === "dark"
   );
-  // null = follow system, true/false = user manual override
+  const [primaryColor, setPrimaryColorState] = useState(PRIMARY);
   const userOverrideRef = useRef<boolean | null>(null);
 
   useEffect(() => {
@@ -28,7 +34,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         userOverrideRef.current = false;
         setDarkModeState(false);
       }
-      // else null: no preference saved → keep following system
+    });
+
+    getItem("@primaryColor").then(val => {
+      if (val) setPrimaryColorState(val);
     });
 
     const sub = Appearance.addChangeListener(({ colorScheme }) => {
@@ -45,8 +54,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     await setItem("@darkMode", val ? "on" : "off");
   };
 
+  const setPrimaryColor = async (color: string) => {
+    setPrimaryColorState(color);
+    await setItem("@primaryColor", color);
+  };
+
   return (
-    <ThemeContext.Provider value={{ darkMode, setDarkMode }}>
+    <ThemeContext.Provider value={{ darkMode, setDarkMode, primaryColor, setPrimaryColor }}>
       {children}
     </ThemeContext.Provider>
   );

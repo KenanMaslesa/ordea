@@ -20,7 +20,7 @@ export default function AdminScreen() {
   const [placeId, setPlaceId] = useState("");
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor } = useTheme();
 
   useEffect(() => {
     getItem("@placeId").then(id => {
@@ -41,7 +41,7 @@ export default function AdminScreen() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarActiveTintColor: "#0E7C86",
+          tabBarActiveTintColor: primaryColor,
           tabBarInactiveTintColor: darkMode ? "#6B7280" : "#999",
           tabBarStyle: {
             height: 62,

@@ -1,7 +1,7 @@
 import { auth } from "@/firebase";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -18,7 +18,7 @@ import { getAdminPlace } from "./services/place.service";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { darkMode } = useTheme();
+  const { darkMode, primaryColor } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,9 +39,11 @@ export default function LoginScreen() {
     inputBorder: "#ddd",
     inputText: "#18181B",
     placeholder: "#A1A1AA",
-    link: "#0E7C86",
+    link: primaryColor,
     linkBack: "#aaa",
   };
+
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   const handleLogin = async () => {
     if (!email || !password)
@@ -118,14 +120,14 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: "#F4F5F7" },
   container: {
     flex: 1,
     justifyContent: "center",
     padding: 28,
   },
-  title: { fontSize: 28, fontWeight: "800", color: "#0E7C86", marginBottom: 4 },
+  title: { fontSize: 28, fontWeight: "800", color: p, marginBottom: 4 },
   subtitle: { fontSize: 13, color: "#888", marginBottom: 28 },
   input: {
     borderWidth: 1,
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   btn: {
-    backgroundColor: "#0E7C86",
+    backgroundColor: p,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -145,5 +147,5 @@ const styles = StyleSheet.create({
   },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   linkBtn: { marginTop: 16, alignItems: "center" },
-  linkText: { color: "#0E7C86", fontSize: 14 },
+  linkText: { color: p, fontSize: 14 },
 });

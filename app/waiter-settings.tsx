@@ -1,25 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "./context/ThemeContext";
 import { getItem, setItem } from "./helper";
 
-const TEAL = "#0E7C86";
-type Theme = "teal" | "white";
+type Theme = "primaryColor" | "white";
 
 export default function WaiterSettings() {
   const router = useRouter();
   const [headerTheme, setHeaderTheme] = useState<Theme>("white");
   const [sheetTheme, setSheetTheme] = useState<Theme>("white");
-  const { darkMode, setDarkMode: toggleDarkMode } = useTheme();
+  const { darkMode, setDarkMode: toggleDarkMode, primaryColor } = useTheme();
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
 
   useEffect(() => {
     (async () => {
       const h = await getItem("@waiterHeaderTheme");
       const s = await getItem("@waiterSheetTheme");
-      if (h === "teal" || h === "white") setHeaderTheme(h);
-      if (s === "teal" || s === "white") setSheetTheme(s);
+      if (h === "primaryColor" || h === "white") setHeaderTheme(h);
+      if (s === "primaryColor" || s === "white") setSheetTheme(s);
     })();
   }, []);
 
@@ -59,7 +59,7 @@ export default function WaiterSettings() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: D.header, borderColor: D.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color={TEAL} />
+          <Ionicons name="chevron-back" size={24} color={primaryColor} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: D.title }]}>Postavke</Text>
         <View style={{ width: 40 }} />
@@ -92,7 +92,7 @@ export default function WaiterSettings() {
             value={headerTheme}
             onChange={saveHeaderTheme}
             options={[
-              { label: "Teal", value: "teal" },
+              { label: "Primarna boja", value: "primaryColor" },
               { label: "Bijelo", value: "white" },
             ]}
           />
@@ -109,7 +109,7 @@ export default function WaiterSettings() {
             value={sheetTheme}
             onChange={saveSheetTheme}
             options={[
-              { label: "Teal", value: "teal" },
+              { label: "Primarna boja", value: "primaryColor" },
               { label: "Bijelo", value: "white" },
             ]}
           />
@@ -134,6 +134,8 @@ function SegmentRow({
   options: { label: string; value: string }[];
   onChange: (v: any) => void;
 }) {
+  const { primaryColor } = useTheme();
+  const styles = useMemo(() => makeStyles(primaryColor), [primaryColor]);
   return (
     <View style={styles.row}>
       <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
@@ -154,7 +156,7 @@ function SegmentRow({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (p: string) => StyleSheet.create({
   root: { flex: 1 },
   header: {
     flexDirection: "row",
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
-  segBtnActive: { backgroundColor: TEAL },
+  segBtnActive: { backgroundColor: p },
   segBtnText: { fontSize: 13, fontWeight: "600", color: "#71717A" },
   segBtnTextActive: { color: "#fff" },
 });
